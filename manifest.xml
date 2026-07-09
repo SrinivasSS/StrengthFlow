@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="5">
+    <iq:application entry="StrengthTrackerApp" id="a3421fee-d289-4f85-a13e-3a5e46a3a3c2"
+        launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0"
+        name="@Strings.AppName" type="watch-app">
+        <iq:products>
+            <iq:product id="epix2pro42mm"/>
+            <iq:product id="epix2pro47mm"/>
+            <iq:product id="epix2pro51mm"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="FitRecording"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
