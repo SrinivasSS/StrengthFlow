@@ -15,6 +15,7 @@ class StrengthTrackerApp extends Application.AppBase {
     }
 
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        return [new WorkoutListView(), new WorkoutListDelegate()];
+        var view = new ExercisePickerView();
+        return [view, new ExercisePickerDelegate()];
     }
 }

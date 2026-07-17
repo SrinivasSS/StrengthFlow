@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<properties>
+    <property id="customGroup1Name" type="string"></property>
+    <property id="customGroup1Exercises" type="string"></property>
+    <property id="customGroup2Name" type="string"></property>
+    <property id="customGroup2Exercises" type="string"></property>
+    <property id="customGroup3Name" type="string"></property>
+    <property id="customGroup3Exercises" type="string"></property>
+</properties>

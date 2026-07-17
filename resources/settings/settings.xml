@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<settings>
+    <setting propertyKey="@Properties.customGroup1Name" title="Custom Group 1 Name">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.customGroup1Exercises" title="Custom Group 1 Exercises (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.customGroup2Name" title="Custom Group 2 Name">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.customGroup2Exercises" title="Custom Group 2 Exercises (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.customGroup3Name" title="Custom Group 3 Name">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.customGroup3Exercises" title="Custom Group 3 Exercises (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+</settings>
