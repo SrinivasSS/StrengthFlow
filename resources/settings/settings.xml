@@ -3,6 +3,15 @@
     <setting propertyKey="@Properties.autoRepCounting" title="Auto Rep Counting">
         <settingConfig type="boolean" />
     </setting>
+    <setting propertyKey="@Properties.restTimerEnabled" title="Rest Timer Alert">
+        <settingConfig type="boolean" />
+    </setting>
+    <setting propertyKey="@Properties.restTimerSeconds" title="Rest Timer Length (seconds)">
+        <settingConfig type="numeric" />
+    </setting>
+    <setting propertyKey="@Properties.useKg" title="Use kg (off = lbs)">
+        <settingConfig type="boolean" />
+    </setting>
     <setting propertyKey="@Properties.customGroup1Name" title="Custom Group 1 - Name (e.g. Push Day)">
         <settingConfig type="alphaNumeric" />
     </setting>

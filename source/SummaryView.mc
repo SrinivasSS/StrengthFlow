@@ -10,10 +10,11 @@ class SummaryView extends WatchUi.View {
     private var _avgHR as Number;
     private var _peakHR as Number;
     private var _calories as Number;
+    private var _volume as Number;
     private var _scrollOffset as Number = 0;
 
     function initialize(sets as Array<Dictionary>, totalTime as Number, exerciseName as String,
-                        avgHR as Number, peakHR as Number, calories as Number) {
+                        avgHR as Number, peakHR as Number, calories as Number, volume as Number) {
         View.initialize();
         _sets = sets;
         _totalTime = totalTime;
@@ -21,6 +22,7 @@ class SummaryView extends WatchUi.View {
         _avgHR = avgHR;
         _peakHR = peakHR;
         _calories = calories;
+        _volume = volume;
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -49,7 +51,15 @@ class SummaryView extends WatchUi.View {
         dc.setColor(0xFF4444, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx + 90, y, Graphics.FONT_XTINY, _avgHR > 0 ? _avgHR + " bpm" : "--",
             Graphics.TEXT_JUSTIFY_CENTER);
-        y += 35;
+        y += 28;
+
+        // Total volume (only if weight was logged)
+        if (_volume > 0) {
+            dc.setColor(0x00BBFF, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, Graphics.FONT_XTINY, "Volume: " + _volume + " " + WorkoutView.weightUnit(),
+                Graphics.TEXT_JUSTIFY_CENTER);
+            y += 25;
+        }
 
         // === EXERCISE BREAKDOWN BARS ===
         var exercises = getExerciseBreakdown();

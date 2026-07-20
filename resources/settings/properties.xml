@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <properties>
     <property id="autoRepCounting" type="boolean">true</property>
+    <property id="restTimerEnabled" type="boolean">false</property>
+    <property id="restTimerSeconds" type="number">90</property>
+    <property id="useKg" type="boolean">false</property>
     <property id="customGroup1Name" type="string"></property>
     <property id="customGroup1Exercises" type="string"></property>
     <property id="customGroup2Name" type="string"></property>

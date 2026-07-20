@@ -2,17 +2,27 @@
 
 ## What Has Been Built
 
-### v2.0.0 (Current)
+### v2.2.2 (Current)
+Everything in v2.0.0 plus the "progress tracking" release:
+- **Total volume tracking** -- weight x reps accumulated across the whole session, shown in the summary and on the stats screen (`WorkoutView._totalVolume`)
+- **Personal Record (PR) tracking** -- best weight per exercise saved long-term in `Application.Storage` (`PRTracker`, key `"prs"`); a PR triggers a distinct vibration and is displayed on the rest screen
+- **Last-session recall** -- previous weight & reps per exercise (`LastSession`, key `"last_session"`) shown on the ready screen and stats screen
+- **Stats screen** (`StatsView`) -- press DOWN during a workout to see LAST TIME / PERSONAL BEST / VOLUME TODAY for the current exercise. BACK from this screen also toggles set/rest so navigation is consistent with the main screen
+- **Optional rest timer** -- configurable target rest with a vibration alert when it expires (settings: `restTimerEnabled`, `restTimerSeconds`)
+- **kg / lb unit toggle** -- setting `useKg`; weight picker increments and all displays adapt (`WorkoutView.weightUnit()` / `useKg()`)
+- **Per-set weight input** -- weight logged via the pause menu weight picker, shown next to the exercise name
+
+### v2.0.0
 A fully functional strength and cardio workout tracker that:
 - Counts reps automatically via accelerometer with per-exercise adaptive learning
 - Detects set/rest transitions automatically after learning from manual usage
 - Records native FIT activities (Strength Training, Treadmill Run, Elliptical, Stair Climbing)
 - Shows real-time HR with zone colors, calories, elapsed time, total time
 - Supports 100+ exercises across 7 muscle groups plus cardio and isolations
-- Allows mid-workout exercise switching via "Save & Switch"
+- Allows mid-workout exercise switching via "Save & Switch" (cardio) and quick-switch (strength)
 - Persists recent exercises and groups for quick access
 - Supports up to 3 custom exercise groups configured via Garmin Connect Mobile
-- Works across 64 Garmin devices (Epix, Fenix, Forerunner, Venu, Vivoactive, Instinct, Enduro, MARQ, D2)
+- Works across 94 Garmin devices (Epix, Fenix, Forerunner, Venu, Vivoactive, Instinct, Enduro, MARQ, D2)
 
 ### v1.0.0 (Initial Scaffold)
 Basic structure with single-exercise tracking.
@@ -203,10 +213,15 @@ This works because:
 ### Active Issues
 1. **UI hardcoded for 454px** -- smaller displays (390px Venu, 360px Vivoactive) may have clipped or overlapping text
 2. **Auto set/rest thresholds not persisted** -- must re-learn every workout
-3. **No weight tracking** -- no way to log weight per set (would need numeric input or preset weights)
-4. **Cardio exercises don't get auto-rest** -- auto-detect is disabled for cardio mode entirely
-5. **FitContributor not used** -- exercise names and rep counts are not embedded in the FIT file, only laps
-6. **item.getSubLabel() unavailable** -- Menu2 MenuItem's `getSubLabel()` was attempted for dynamic menu updating but is not available in the Monkey C API, caused compile errors
+3. **Cardio exercises don't get auto-rest** -- auto-detect is disabled for cardio mode entirely
+4. **FitContributor not used** -- exercise names and rep counts are not embedded in the FIT file, only laps
+5. **item.getSubLabel() unavailable** -- Menu2 MenuItem's `getSubLabel()` was attempted for dynamic menu updating but is not available in the Monkey C API, caused compile errors
+
+### Resolved (v2.2.2)
+1. **Weight tracking** -- weight is now logged per set via the pause-menu picker (preset increments, kg/lb aware). Powers volume + PR tracking.
+2. **UI redesign** -- moved from hex-bordered layout to a grid layout with an HR-zone arc across the top half, hero cell, 2x2 data grid, and clock at the bottom
+3. **Weight showed "Not set" after selecting** -- fixed by passing the source MenuItem into `WeightPickerDelegate` and calling `setSubLabel`
+4. **Stats screen BACK inconsistency** -- BACK on the stats screen now closes it AND toggles set/rest, matching the main screen
 
 ### Resolved Crashes
 1. **switchToView from Menu2InputDelegate** -- resolved by using Save path + SummaryDelegate restart
@@ -233,20 +248,20 @@ This works because:
 
 1. **Responsive UI** -- detect screen size and adjust pixel positions / font choices
 2. **Persist auto set/rest thresholds** -- store rest/active variance per exercise like rep thresholds
-3. **Weight input** -- even a simple "last weight used" recall would be valuable
-4. **Rep count in FIT** -- investigate FitContributor numeric fields (DATA_TYPE_UINT16) for rep count per lap
-5. **Better cardio metrics** -- pace, speed, steps/min for treadmill
-6. **Workout templates** -- save a sequence of exercises as a "routine" to follow
+3. **Rep count in FIT** -- investigate FitContributor numeric fields (DATA_TYPE_UINT16) for rep count per lap
+4. **Better cardio metrics** -- pace, speed, steps/min for treadmill
+5. **Workout templates** -- save a sequence of exercises as a "routine" to follow
+6. **Plate calculator** -- given a target weight + bar, show which plates to load (no CIQ competitor has this)
 
 ---
 
 ## Future Feature Ideas
 
 - **Superset mode** -- pair two exercises, alternate between them with shared rest
-- **Progressive overload tracking** -- compare this session to last session (same exercise)
 - **Timer-based sets** -- for planks, wall sits, farmer walks (count seconds, not reps)
-- **Rest timer targets** -- configurable rest duration with countdown and alert
 - **Workout history** -- view past workouts on-watch (not just in Garmin Connect)
+- **1RM estimate** -- Epley/Brzycki estimate from weight x reps, tracked over time
+- **Warm-up set calculator** -- suggest warm-up sets ramping to the working weight
 - **Body weight input** -- for calorie accuracy and relative strength tracking
 - **Rep tempo tracking** -- detect eccentric/concentric phase timing
 - **Voice/audio cues** -- if headphones connected, announce rep count

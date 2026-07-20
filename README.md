@@ -16,6 +16,13 @@ A full-featured strength and cardio workout tracker for Garmin watches. Tracks r
 - **Floor counting** for Stairmaster (via barometric altimeter)
 - **Correct FIT sport types** -- Treadmill Run, Elliptical, Stair Climbing each get their native sport/sub-sport
 
+### Progress Tracking
+- **Total volume** -- weight x reps accumulated across the whole session
+- **Personal Records** -- best weight per exercise saved long-term; a new PR triggers a celebration vibration and shows on the rest screen
+- **Last-session recall** -- previous weight & reps for the current exercise, shown on the ready and stats screens
+- **Stats screen** -- press DOWN mid-workout for LAST TIME / PERSONAL BEST / VOLUME TODAY
+- **Per-set weight** -- log weight via the pause menu; supports kg or lb (toggle in settings)
+
 ### Health Metrics
 - **Real-time heart rate** with zone-based color coding (5 zones from Garmin user profile)
 - **Calories** from native Activity API
@@ -62,6 +69,8 @@ Screenshots are in the `build/` folder:
 | `build/screenshot_3_rest.png` | Rest timer between sets |
 | `build/screenshot_4_summary.png` | Workout complete summary |
 | `build/screenshot_5_pause.png` | Pause menu with options |
+| `build/screenshot_7_stats.png` | Stats screen (last time, PR, volume today) |
+| `build/screenshot_8_rest_pr.png` | Rest screen showing personal record |
 | `build/hero_1440x720.png` | Connect IQ store hero banner |
 | `build/icon_256.png` | App icon (256px) |
 | `build/icon_512.png` | App icon (512px) |

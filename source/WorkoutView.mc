@@ -33,6 +33,10 @@ class WorkoutView extends WatchUi.View {
     private var _transitionCooldown as Number = 0;
     private var _weight as Number = 0;
     private var _manualDistance as Float = -1.0;
+    private var _restAlertFired as Boolean = false;
+    private var _totalVolume as Number = 0;
+    private var _newPR as Boolean = false;
+    private var _newPRText as String = "";
 
     function initialize(exerciseName as String, groupName as String) {
         View.initialize();
@@ -73,20 +77,28 @@ class WorkoutView extends WatchUi.View {
 
     private function drawReadyState(dc as Dc, cx as Number, cy as Number, w as Number, h as Number) as Void {
         dc.setColor(0x00BBFF, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - 40, Graphics.FONT_MEDIUM, _exerciseName,
+        dc.drawText(cx, cy - 55, Graphics.FONT_MEDIUM, _exerciseName,
             Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy, Graphics.FONT_XTINY, _groupName,
+        dc.drawText(cx, cy - 18, Graphics.FONT_XTINY, _groupName,
             Graphics.TEXT_JUSTIFY_CENTER);
 
+        // Last-time recall
+        var last = LastSession.summary(_exerciseName, weightUnit());
+        if (!last.equals("")) {
+            dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, cy + 8, Graphics.FONT_XTINY, "Last: " + last,
+                Graphics.TEXT_JUSTIFY_CENTER);
+        }
+
         dc.setColor(0x00CC66, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 40, Graphics.FONT_SMALL, "Press START",
+        dc.drawText(cx, cy + 45, Graphics.FONT_SMALL, "Press START",
             Graphics.TEXT_JUSTIFY_CENTER);
 
         var detectColor = _autoDetectEnabled ? 0x00CC66 : 0x555555;
         dc.setColor(detectColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + 80, Graphics.FONT_XTINY,
+        dc.drawText(cx, cy + 82, Graphics.FONT_XTINY,
             _autoDetectEnabled ? "Auto ON" : "Auto OFF",
             Graphics.TEXT_JUSTIFY_CENTER);
     }
@@ -115,10 +127,16 @@ class WorkoutView extends WatchUi.View {
             bigLabel = "REPS";
         }
 
+        // Show weight next to exercise name when set (strength only)
+        var sub = _exerciseName;
+        if (!isCardioExercise() && _weight > 0) {
+            sub = _exerciseName + " • " + _weight + " " + weightUnit();
+        }
+
         drawWorkoutGrid(dc, {
             "accent" => accent,
             "status" => "SET " + _setNumber,
-            "sub" => _exerciseName,
+            "sub" => sub,
             "bigVal" => bigVal,
             "bigLabel" => bigLabel,
             "hrStr" => hrStr,
@@ -220,19 +238,45 @@ class WorkoutView extends WatchUi.View {
         var hrColor = _healthMonitor.getZoneColor();
         var cal = _healthMonitor.getCalories();
 
+        // If rest timer enabled, count down to target; else count up
+        var restBig;
+        var restLbl;
+        if (isRestTimerEnabled()) {
+            var remaining = getRestTarget() - _restSeconds;
+            if (remaining < 0) { remaining = 0; }
+            restBig = formatTime(remaining);
+            restLbl = "REST LEFT";
+        } else {
+            restBig = formatTime(_restSeconds);
+            restLbl = "REST TIME";
+        }
+
+        var restSub = _exerciseName + " • " + _reps + "r";
+        if (_weight > 0) {
+            restSub += " • " + _weight + " " + weightUnit();
+        }
+        if (!_newPRText.equals("")) {
+            restSub = "PR! " + _newPRText + " " + weightUnit();
+        }
+
+        // Right cell shows this exercise's PR (best weight) if known
+        var pr = PRTracker.getBestWeight(_exerciseName);
+        var rightVal = pr > 0 ? pr.toString() : _setNumber.toString();
+        var rightLabel = pr > 0 ? ("PR " + weightUnit()) : "SETS";
+
         drawWorkoutGrid(dc, {
             "accent" => 0x3399FF,
             "status" => "REST",
-            "sub" => _exerciseName + " • " + _reps + "r",
-            "bigVal" => formatTime(_restSeconds),
-            "bigLabel" => "REST TIME",
+            "sub" => restSub,
+            "bigVal" => restBig,
+            "bigLabel" => restLbl,
             "hrStr" => hrStr,
             "hrColor" => hrColor,
             "cal" => cal.toString(),
             "leftVal" => formatTime(_totalWorkoutSeconds),
             "leftLabel" => "TOTAL",
-            "rightVal" => _setNumber.toString(),
-            "rightLabel" => "SETS"
+            "rightVal" => rightVal,
+            "rightLabel" => rightLabel
         });
     }
 
@@ -383,6 +427,7 @@ class WorkoutView extends WatchUi.View {
         _elapsedSeconds = 0;
         _state = STATE_SET_ACTIVE;
         _transitionCooldown = 15;
+        _newPRText = "";
         _recorder.setCurrentExercise(_exerciseName);
         WatchUi.requestUpdate();
     }
@@ -400,15 +445,29 @@ class WorkoutView extends WatchUi.View {
             "set" => _setNumber,
             "reps" => _reps,
             "duration" => _elapsedSeconds,
-            "exercise" => _exerciseName
+            "exercise" => _exerciseName,
+            "weight" => _weight
         });
+        _totalVolume += _weight * _reps;
+        LastSession.record(_exerciseName, _weight, _reps);
+        // Check for a new PR
+        if (_weight > 0 && PRTracker.checkAndRecord(_exerciseName, _weight)) {
+            _newPR = true;
+            _newPRText = _exerciseName + " " + _weight;
+        }
         try {
             _recorder.recordSet(_reps, _exerciseName);
         } catch (e) {}
         _restSeconds = 0;
+        _restAlertFired = false;
         _state = STATE_REST;
         _transitionCooldown = 15;
-        vibeSetEnd();
+        if (_newPR) {
+            vibePR();
+            _newPR = false;
+        } else {
+            vibeSetEnd();
+        }
         WatchUi.requestUpdate();
     }
 
@@ -418,8 +477,12 @@ class WorkoutView extends WatchUi.View {
                 "set" => _setNumber,
                 "reps" => _reps,
                 "duration" => _elapsedSeconds,
-                "exercise" => _exerciseName
+                "exercise" => _exerciseName,
+                "weight" => _weight
             });
+            _totalVolume += _weight * _reps;
+            LastSession.record(_exerciseName, _weight, _reps);
+            if (_weight > 0) { PRTracker.checkAndRecord(_exerciseName, _weight); }
             try { _recorder.recordSet(_reps, _exerciseName); } catch (e) {}
         }
         stopTimer();
@@ -432,7 +495,7 @@ class WorkoutView extends WatchUi.View {
         var summaryView = new SummaryView(
             _setHistory, _totalWorkoutSeconds, _exerciseName,
             _healthMonitor.getAvgHR(), _healthMonitor.getPeakHR(),
-            _healthMonitor.getCalories()
+            _healthMonitor.getCalories(), _totalVolume
         );
         WatchUi.pushView(summaryView, new SummaryDelegate(summaryView, restartAfter), WatchUi.SLIDE_LEFT);
     }
@@ -453,7 +516,7 @@ class WorkoutView extends WatchUi.View {
             }
             menu.addItem(new WatchUi.MenuItem("Save & Switch", "Save cardio, pick new", :switchExercise, null));
         } else {
-            var weightLabel = _weight > 0 ? _weight + " lbs" : "Not set";
+            var weightLabel = _weight > 0 ? _weight + " " + weightUnit() : "Not set";
             menu.addItem(new WatchUi.MenuItem("Weight", weightLabel, :weight, null));
             menu.addItem(new WatchUi.MenuItem("Switch Exercise", _exerciseName, :quickSwitch, null));
         }
@@ -538,6 +601,29 @@ class WorkoutView extends WatchUi.View {
 
     function setWeight(w as Number) as Void {
         _weight = w;
+    }
+
+    function getVolume() as Number {
+        return _totalVolume;
+    }
+
+    // Weight unit label: "kg" or "lbs" based on setting
+    static function weightUnit() as String {
+        try {
+            var v = Application.Properties.getValue("useKg");
+            if (v != null && v instanceof Boolean && v) {
+                return "kg";
+            }
+        } catch (e) {}
+        return "lbs";
+    }
+
+    static function useKg() as Boolean {
+        try {
+            var v = Application.Properties.getValue("useKg");
+            return v != null && v instanceof Boolean && v;
+        } catch (e) {}
+        return false;
     }
 
     function setManualDistance(tenths as Number) as Void {
@@ -632,14 +718,58 @@ class WorkoutView extends WatchUi.View {
             _elapsedSeconds++;
         } else if (_state == STATE_REST) {
             _restSeconds++;
+            // Rest timer alert — vibrate once when target rest reached
+            if (!_restAlertFired && isRestTimerEnabled() && _restSeconds >= getRestTarget()) {
+                _restAlertFired = true;
+                vibeRestDone();
+            }
         }
         if (_transitionCooldown > 0) {
             _transitionCooldown--;
         }
         _healthMonitor.update();
-
-
         WatchUi.requestUpdate();
+    }
+
+    private function isRestTimerEnabled() as Boolean {
+        try {
+            var v = Application.Properties.getValue("restTimerEnabled");
+            return v != null && v instanceof Boolean && v;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    private function getRestTarget() as Number {
+        try {
+            var v = Application.Properties.getValue("restTimerSeconds");
+            if (v != null && v instanceof Number && v > 0) {
+                return v;
+            }
+        } catch (e) {}
+        return 90;
+    }
+
+    private function vibeRestDone() as Void {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 300),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 300)
+            ]);
+        }
+    }
+
+    private function vibePR() as Void {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 400)
+            ]);
+        }
     }
 
     private function vibeStart() as Void {
