@@ -32,6 +32,7 @@ class WorkoutView extends WatchUi.View {
     private var _stateBeforePause as WorkoutState = STATE_SET_ACTIVE;
     private var _transitionCooldown as Number = 0;
     private var _weight as Number = 0;
+    private var _manualDistance as Float = -1.0;
 
     function initialize(exerciseName as String, groupName as String) {
         View.initialize();
@@ -91,163 +92,148 @@ class WorkoutView extends WatchUi.View {
     }
 
     private function drawActiveState(dc as Dc, cx as Number, cy as Number, w as Number, h as Number) as Void {
-        // Green accent bar
-        dc.setColor(0x00CC66, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(0, 0, w, 4);
-
-        // Zone 1 (top): SET + line + Exercise
-        dc.setColor(0x00CC66, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 45, Graphics.FONT_SMALL, "SET " + _setNumber,
-            Graphics.TEXT_JUSTIFY_CENTER);
-        drawTopHalfHex(dc, cx, 85, 160, 0x00CC66);
-        dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 90, Graphics.FONT_XTINY, _exerciseName,
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Zone 2 (upper): HR left, CAL right
+        var accent = 0x00CC66;
         var hr = _healthMonitor.getCurrentHR();
-        var zoneColor = _healthMonitor.getZoneColor();
         var hrStr = hr > 0 ? hr.toString() : "--";
+        var hrColor = _healthMonitor.getZoneColor();
         var cal = _healthMonitor.getCalories();
 
-        dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 80, 170, Graphics.FONT_XTINY, hrStr,
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 80, 195, Graphics.FONT_XTINY, "HR",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 80, 170, Graphics.FONT_XTINY, cal.toString(),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 80, 195, Graphics.FONT_XTINY, "CAL",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Zone 3 (center): REPS or Distance/Floors for cardio
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        // Primary metric value + label
+        var bigVal;
+        var bigLabel;
         if (isCardioExercise()) {
             if (isStairExercise()) {
-                var floors = _healthMonitor.getFloors();
-                dc.drawText(cx, 165, Graphics.FONT_NUMBER_MEDIUM, floors.toString(),
-                    Graphics.TEXT_JUSTIFY_CENTER);
-                dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, 255, Graphics.FONT_XTINY, "FLOORS",
-                    Graphics.TEXT_JUSTIFY_CENTER);
+                bigVal = _healthMonitor.getFloors().toString();
+                bigLabel = "FLOORS";
             } else {
-                var miles = _healthMonitor.getDistanceMiles();
-                dc.drawText(cx, 165, Graphics.FONT_NUMBER_MEDIUM, miles.format("%.2f"),
-                    Graphics.TEXT_JUSTIFY_CENTER);
-                dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, 255, Graphics.FONT_XTINY, "MILES",
-                    Graphics.TEXT_JUSTIFY_CENTER);
+                var miles = _manualDistance >= 0.0 ? _manualDistance : _healthMonitor.getDistanceMiles();
+                bigVal = miles.format("%.2f");
+                bigLabel = _manualDistance >= 0.0 ? "MILES *" : "MILES";
             }
         } else {
-            dc.drawText(cx, 155, Graphics.FONT_NUMBER_HOT, _reps.toString(),
-                Graphics.TEXT_JUSTIFY_CENTER);
-            dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 265, Graphics.FONT_XTINY, "REPS",
-                Graphics.TEXT_JUSTIFY_CENTER);
+            bigVal = _reps.toString();
+            bigLabel = "REPS";
         }
 
-        // Zone 4 (lower): Elapsed left, Total right — no borders
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 295, Graphics.FONT_XTINY, formatTime(_elapsedSeconds),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 315, Graphics.FONT_XTINY, "ELAPSED",
-            Graphics.TEXT_JUSTIFY_CENTER);
+        drawWorkoutGrid(dc, {
+            "accent" => accent,
+            "status" => "SET " + _setNumber,
+            "sub" => _exerciseName,
+            "bigVal" => bigVal,
+            "bigLabel" => bigLabel,
+            "hrStr" => hrStr,
+            "hrColor" => hrColor,
+            "cal" => cal.toString(),
+            "leftVal" => formatTime(_elapsedSeconds),
+            "leftLabel" => "SET TIME",
+            "rightVal" => formatTime(_totalWorkoutSeconds),
+            "rightLabel" => "TOTAL"
+        });
+    }
 
-        dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 295, Graphics.FONT_XTINY, formatTime(_totalWorkoutSeconds),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 315, Graphics.FONT_XTINY, "TOTAL",
-            Graphics.TEXT_JUSTIFY_CENTER);
+    // Garmin-style grid: header row, big hero cell, then 2 rows of split data cells
+    private function drawWorkoutGrid(dc as Dc, d as Dictionary) as Void {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var cx = w / 2;
+        var accent = d["accent"] as Number;
+        var statusText = d["status"] as String;
+        var subText = d["sub"] as String;
+        var bigVal = d["bigVal"] as String;
+        var bigLabel = d["bigLabel"] as String;
+        var hrStr = d["hrStr"] as String;
+        var hrColor = d["hrColor"] as Number;
+        var calStr = d["cal"] as String;
+        var leftVal = d["leftVal"] as String;
+        var leftLabel = d["leftLabel"] as String;
+        var rightVal = d["rightVal"] as String;
+        var rightLabel = d["rightLabel"] as String;
 
-        // Zone 5 (bottom): clock + auto — half hex resting on bottom bezel
+        var line = 0x333333;
+
+        // HR zone ring across the top
+        drawHrZoneRing(dc, cx, h / 2, w, h);
+
+        // Row boundaries
+        var r1 = 95;   // header band bottom
+        var r2 = 235;  // hero cell bottom
+        var r3 = 300;  // data row 1 bottom
+
+        // Grid divider lines (horizontal)
+        dc.setColor(line, Graphics.COLOR_TRANSPARENT);
+        dc.drawLine(w * 10 / 100, r1, w * 90 / 100, r1);
+        dc.drawLine(w * 8 / 100, r2, w * 92 / 100, r2);
+        dc.drawLine(w * 10 / 100, r3, w * 90 / 100, r3);
+        // Vertical divider in data row (between HR and CAL)
+        dc.drawLine(cx, r2, cx, r3);
+        // Vertical divider in bottom row (between ELAPSED and TOTAL)
+        dc.drawLine(cx, r3, cx, h * 90 / 100);
+
+        // === Header band (clock • status, then exercise) ===
         var now = System.getClockTime();
         var hour = now.hour > 12 ? now.hour - 12 : now.hour;
         if (hour == 0) { hour = 12; }
-        var bottomStr = hour + ":" + now.min.format("%02d");
-        if (_autoDetectEnabled) {
-            bottomStr += " • AUTO";
-        }
-        drawBottomHalfHex(dc, cx, 350, 160, 0x00CC66);
+        var clockStr = hour + ":" + now.min.format("%02d");
+        // Status + exercise at top
+        dc.setColor(accent, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 44, Graphics.FONT_XTINY, statusText, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 66, Graphics.FONT_XTINY, subText, Graphics.TEXT_JUSTIFY_CENTER);
+        // Clock at bottom
+        dc.setColor(0x666666, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, h - 40, Graphics.FONT_XTINY, clockStr, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // === Hero cell (big primary metric) ===
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 108, Graphics.FONT_NUMBER_HOT, bigVal, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(0x666666, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 210, Graphics.FONT_XTINY, bigLabel, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // === Data row 1: HR | CAL === (columns inset from edges for round display)
+        var q1 = w * 30 / 100;
+        var q3 = w * 70 / 100;
+        dc.setColor(hrColor, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q1, r2 + 6, Graphics.FONT_SMALL, hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q1, r2 + 44, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q3, r2 + 6, Graphics.FONT_SMALL, calStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q3, r2 + 44, Graphics.FONT_XTINY, "CAL", Graphics.TEXT_JUSTIFY_CENTER);
+
+        // === Data row 2: leftVal | rightVal ===
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q1, r3 + 6, Graphics.FONT_SMALL, leftVal, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q1, r3 + 44, Graphics.FONT_XTINY, leftLabel, Graphics.TEXT_JUSTIFY_CENTER);
+
         dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 355, Graphics.FONT_XTINY, bottomStr,
-            Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(q3, r3 + 6, Graphics.FONT_SMALL, rightVal, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(q3, r3 + 44, Graphics.FONT_XTINY, rightLabel, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     private function drawRestState(dc as Dc, cx as Number, cy as Number, w as Number, h as Number) as Void {
-        // Blue accent bar
-        dc.setColor(0x3399FF, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(0, 0, w, 4);
-
-        // Zone 1 (top): REST + line + exercise
-        dc.setColor(0x3399FF, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 45, Graphics.FONT_SMALL, "REST",
-            Graphics.TEXT_JUSTIFY_CENTER);
-        drawTopHalfHex(dc, cx, 85, 160, 0x3399FF);
-        dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 78, Graphics.FONT_XTINY, _exerciseName + " • " + _reps + "r",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Zone 2 (upper): HR left, CAL right
         var hr = _healthMonitor.getCurrentHR();
-        var zoneColor = _healthMonitor.getZoneColor();
         var hrStr = hr > 0 ? hr.toString() : "--";
+        var hrColor = _healthMonitor.getZoneColor();
         var cal = _healthMonitor.getCalories();
 
-        dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 80, 170, Graphics.FONT_XTINY, hrStr,
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 80, 195, Graphics.FONT_XTINY, "HR",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 80, 170, Graphics.FONT_XTINY, cal.toString(),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 80, 195, Graphics.FONT_XTINY, "CAL",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Zone 3 (center): REST TIMER
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 165, Graphics.FONT_NUMBER_MEDIUM, formatTime(_restSeconds),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 255, Graphics.FONT_XTINY, "REST",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Zone 4 (lower): Total left, Sets right — no borders
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 295, Graphics.FONT_XTINY, formatTime(_totalWorkoutSeconds),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 315, Graphics.FONT_XTINY, "TOTAL",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 295, Graphics.FONT_XTINY, _setNumber.toString(),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 315, Graphics.FONT_XTINY, "SETS",
-            Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Zone 5 (bottom): clock + auto — half hex resting on bottom bezel
-        var now = System.getClockTime();
-        var hour = now.hour > 12 ? now.hour - 12 : now.hour;
-        if (hour == 0) { hour = 12; }
-        var bottomStr = hour + ":" + now.min.format("%02d");
-        if (_autoDetectEnabled) {
-            bottomStr += " • AUTO";
-        }
-        drawBottomHalfHex(dc, cx, 350, 160, 0x3399FF);
-        dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 355, Graphics.FONT_XTINY, bottomStr,
-            Graphics.TEXT_JUSTIFY_CENTER);
+        drawWorkoutGrid(dc, {
+            "accent" => 0x3399FF,
+            "status" => "REST",
+            "sub" => _exerciseName + " • " + _reps + "r",
+            "bigVal" => formatTime(_restSeconds),
+            "bigLabel" => "REST TIME",
+            "hrStr" => hrStr,
+            "hrColor" => hrColor,
+            "cal" => cal.toString(),
+            "leftVal" => formatTime(_totalWorkoutSeconds),
+            "leftLabel" => "TOTAL",
+            "rightVal" => _setNumber.toString(),
+            "rightLabel" => "SETS"
+        });
     }
 
     private function isCardioExercise() as Boolean {
@@ -297,6 +283,55 @@ class WorkoutView extends WatchUi.View {
         dc.drawLine(cx - hw + indent, topY, cx + hw - indent, topY);
         dc.drawLine(cx + hw - indent, topY, cx + hw, topY + 20);
         dc.drawLine(cx - hw + indent, topY, cx - hw, topY + 20);
+    }
+
+    // Draws a 5-segment HR zone ring around the display edge.
+    // Each zone gets a segment; the current zone is bright, others dim.
+    private function drawHrZoneRing(dc as Dc, cx as Number, cy as Number, w as Number, h as Number) as Void {
+        if (!(dc has :drawArc)) { return; }
+
+        var radius = (w / 2) - 4;
+        var currentZone = _healthMonitor.getHRZone();
+
+        // Zone colors (1-5)
+        var zoneColors = [0xAAAAAA, 0x00AAFF, 0x00CC00, 0xFFAA00, 0xFF0000];
+
+        // 5 segments across the TOP half. Garmin arc angles: 0°=3 o'clock,
+        // 90°=12 o'clock, 180°=9 o'clock. Top half = 180° (left) to 0° (right),
+        // going clockwise through 90 (top). Span the full top: 175°..5°.
+        var segStart = 175;
+        var segSpan = 34; // degrees per zone segment (5 × 34 ≈ 170°)
+
+        if (dc has :setPenWidth) {
+            dc.setPenWidth(8);
+        }
+
+        for (var z = 1; z <= 5; z++) {
+            var color = zoneColors[z - 1];
+            // Always visible: dim if not the current zone, but not black
+            if (currentZone > 0 && z != currentZone) {
+                color = dimColor(color);
+            }
+            dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+            var start = segStart - (z - 1) * segSpan;
+            var end = start - segSpan + 3;
+            dc.drawArc(cx, cy, radius, Graphics.ARC_CLOCKWISE, start, end);
+        }
+
+        if (dc has :setPenWidth) {
+            dc.setPenWidth(1);
+        }
+    }
+
+    private function dimColor(color as Number) as Number {
+        // Halve each RGB channel to dim
+        var r = (color >> 16) & 0xFF;
+        var g = (color >> 8) & 0xFF;
+        var b = color & 0xFF;
+        r = r / 4;
+        g = g / 4;
+        b = b / 4;
+        return (r << 16) | (g << 8) | b;
     }
 
     private function getTotalReps() as Number {
@@ -411,11 +446,15 @@ class WorkoutView extends WatchUi.View {
 
         var menu = new WatchUi.Menu2({:title => "Workout Paused"});
         menu.addItem(new WatchUi.MenuItem("Resume", formatTime(_totalWorkoutSeconds) + " elapsed", :resume, null));
-        var weightLabel = _weight > 0 ? _weight + " lbs" : "Not set";
-        menu.addItem(new WatchUi.MenuItem("Weight", weightLabel, :weight, null));
         if (isCardioExercise()) {
+            if (!isStairExercise()) {
+                var distLabel = _manualDistance >= 0.0 ? _manualDistance.format("%.1f") + " mi" : "Auto";
+                menu.addItem(new WatchUi.MenuItem("Set Distance", distLabel, :distance, null));
+            }
             menu.addItem(new WatchUi.MenuItem("Save & Switch", "Save cardio, pick new", :switchExercise, null));
         } else {
+            var weightLabel = _weight > 0 ? _weight + " lbs" : "Not set";
+            menu.addItem(new WatchUi.MenuItem("Weight", weightLabel, :weight, null));
             menu.addItem(new WatchUi.MenuItem("Switch Exercise", _exerciseName, :quickSwitch, null));
         }
         var autoLabel = _autoDetectEnabled ? "Auto-Detect: ON" : "Auto-Detect: OFF";
@@ -499,6 +538,20 @@ class WorkoutView extends WatchUi.View {
 
     function setWeight(w as Number) as Void {
         _weight = w;
+    }
+
+    function setManualDistance(tenths as Number) as Void {
+        // tenths of a mile → miles
+        _manualDistance = tenths / 10.0;
+    }
+
+    function getManualDistanceTenths() as Number {
+        if (_manualDistance < 0.0) { return 0; }
+        return (_manualDistance * 10.0).toNumber();
+    }
+
+    function isCurrentCardio() as Boolean {
+        return isCardioExercise();
     }
 
     function getWeight() as Number {

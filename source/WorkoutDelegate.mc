@@ -97,6 +97,9 @@ class PauseMenuDelegate extends WatchUi.Menu2InputDelegate {
                 menu.addItem(new WatchUi.MenuItem(label, null, weights[i], null));
             }
             WatchUi.pushView(menu, new WeightPickerDelegate(_view), WatchUi.SLIDE_LEFT);
+        } else if (id == :distance) {
+            WatchUi.pushView(new DistancePicker(_view.getManualDistanceTenths()),
+                new DistancePickerDelegate(_view), WatchUi.SLIDE_LEFT);
         } else if (id == :toggleAuto) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             _view.toggleAutoDetect();
@@ -144,6 +147,30 @@ class WeightPickerDelegate extends WatchUi.Menu2InputDelegate {
 
     function onBack() as Void {
         WatchUi.popView(WatchUi.SLIDE_RIGHT);
+    }
+}
+
+class DistancePickerDelegate extends WatchUi.PickerDelegate {
+
+    private var _view as WorkoutView;
+
+    function initialize(view as WorkoutView) {
+        PickerDelegate.initialize();
+        _view = view;
+    }
+
+    function onAccept(values as Array) as Boolean {
+        // values = [wholeMiles, dotIndex, tenths]
+        var whole = values[0] as Number;
+        var tenths = values[2] as Number;
+        _view.setManualDistance(whole * 10 + tenths);
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+        return true;
+    }
+
+    function onCancel() as Boolean {
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+        return true;
     }
 }
 
