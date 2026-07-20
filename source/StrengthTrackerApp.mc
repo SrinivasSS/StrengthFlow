@@ -18,4 +18,5 @@ class StrengthTrackerApp extends Application.AppBase {
         var view = new ExercisePickerView();
         return [view, new ExercisePickerDelegate()];
     }
+
 }

@@ -137,18 +137,7 @@ class RepDetector {
         _activeVariance = 0.0;
         _usingSensorListener = false;
 
-        // Try registerSensorDataListener first (batch mode, higher rate)
-        try {
-            Sensor.registerSensorDataListener(method(:onSensorData), {
-                :period => 1,
-                :accelerometer => {:enabled => true, :sampleRate => 25}
-            });
-            _usingSensorListener = true;
-        } catch (e) {
-            _usingSensorListener = false;
-        }
-
-        // Also start polling as fallback (works on all devices)
+        // Poll accelerometer at 10Hz — reliable on all devices
         _timer = new Timer.Timer();
         _timer.start(method(:onPoll), 100, true);
     }
@@ -191,36 +180,6 @@ class RepDetector {
                 _timer.stop();
                 _timer = null;
             }
-            if (_usingSensorListener) {
-                try {
-                    Sensor.unregisterSensorDataListener();
-                } catch (e) {}
-            }
-        }
-    }
-
-    // Batch sensor data callback (newer API)
-    function onSensorData(sensorData as Sensor.SensorData) as Void {
-        if (!_isRunning) { return; }
-        var accel = sensorData.accelerometerData;
-        if (accel == null) { return; }
-        var xData = accel.x;
-        var yData = accel.y;
-        var zData = accel.z;
-        if (xData == null || yData == null || zData == null) { return; }
-
-        // If we get data here, disable polling to avoid double-counting
-        if (_timer != null) {
-            _timer.stop();
-            _timer = null;
-        }
-
-        for (var i = 0; i < xData.size(); i++) {
-            var x = xData[i].toFloat();
-            var y = yData[i].toFloat();
-            var z = zData[i].toFloat();
-            var mag = Math.sqrt(x * x + y * y + z * z).toFloat();
-            processSample(mag);
         }
     }
 

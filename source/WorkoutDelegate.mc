@@ -89,12 +89,33 @@ class PauseMenuDelegate extends WatchUi.Menu2InputDelegate {
             _view.discardWorkout();
         } else if (id == :debug) {
             WatchUi.pushView(new DebugView(_view.getRepDetector()), new DebugDelegate(), WatchUi.SLIDE_LEFT);
+        } else if (id == :weight) {
+            var menu = new WatchUi.Menu2({:title => "Weight (lbs)"});
+            var weights = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 135, 150, 175, 200, 225, 250, 275, 300];
+            for (var i = 0; i < weights.size(); i++) {
+                var label = weights[i] == 0 ? "None" : weights[i].toString();
+                menu.addItem(new WatchUi.MenuItem(label, null, weights[i], null));
+            }
+            WatchUi.pushView(menu, new WeightPickerDelegate(_view), WatchUi.SLIDE_LEFT);
         } else if (id == :toggleAuto) {
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             _view.toggleAutoDetect();
             _view.resumeWorkout();
+        } else if (id == :quickSwitch) {
+            // Show exercises from current group directly
+            _view.setQuickSwitchMode(true);
+            var groupName = _view.getGroupName();
+            var exercises = getExercisesForGroup(groupName);
+            var menu = new WatchUi.Menu2({:title => groupName});
+            for (var i = 0; i < exercises.size(); i++) {
+                if (!exercises[i].equals(_view.getExerciseName())) {
+                    menu.addItem(new WatchUi.MenuItem(exercises[i], null, exercises[i], null));
+                }
+            }
+            menu.addItem(new WatchUi.MenuItem("Other Groups...", null, :otherGroups, null));
+            WatchUi.pushView(menu, new QuickSwitchDelegate(_view), WatchUi.SLIDE_LEFT);
         } else if (id == :switchExercise) {
-            // Same as Save, but summary will go to picker instead of back
+            // Save and start fresh workout
             WatchUi.popView(WatchUi.SLIDE_DOWN);
             _view.endWorkout(true);
         }
@@ -103,6 +124,56 @@ class PauseMenuDelegate extends WatchUi.Menu2InputDelegate {
     function onBack() as Void {
         WatchUi.popView(WatchUi.SLIDE_DOWN);
         _view.resumeWorkout();
+    }
+}
+
+class WeightPickerDelegate extends WatchUi.Menu2InputDelegate {
+
+    private var _view as WorkoutView;
+
+    function initialize(view as WorkoutView) {
+        Menu2InputDelegate.initialize();
+        _view = view;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        var weight = item.getId() as Number;
+        _view.setWeight(weight);
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+    }
+
+    function onBack() as Void {
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+    }
+}
+
+class QuickSwitchDelegate extends WatchUi.Menu2InputDelegate {
+
+    private var _view as WorkoutView;
+
+    function initialize(view as WorkoutView) {
+        Menu2InputDelegate.initialize();
+        _view = view;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        var id = item.getId();
+        if (id == :otherGroups) {
+            ExercisePickerView.showGroupMenu();
+            return;
+        }
+
+        // Quick switch — change name, pop switch menu + pause menu, resume
+        var name = item.getLabel();
+        _view.doQuickSwitch(name, _view.getGroupName());
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
+        _view.resumeWorkout();
+    }
+
+    function onBack() as Void {
+        _view.setQuickSwitchMode(false);
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
     }
 }
 

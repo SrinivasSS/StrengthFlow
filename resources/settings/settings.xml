@@ -1,21 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <settings>
-    <setting propertyKey="@Properties.customGroup1Name" title="Custom Group 1 Name">
+    <setting propertyKey="@Properties.autoRepCounting" title="Auto Rep Counting">
+        <settingConfig type="boolean" />
+    </setting>
+    <setting propertyKey="@Properties.customGroup1Name" title="Custom Group 1 - Name (e.g. Push Day)">
         <settingConfig type="alphaNumeric" />
     </setting>
-    <setting propertyKey="@Properties.customGroup1Exercises" title="Custom Group 1 Exercises (comma separated)">
+    <setting propertyKey="@Properties.customGroup1Exercises" title="Custom Group 1 - Exercises (e.g. Bench Press, OHP, Dips)">
         <settingConfig type="alphaNumeric" />
     </setting>
-    <setting propertyKey="@Properties.customGroup2Name" title="Custom Group 2 Name">
+    <setting propertyKey="@Properties.customGroup2Name" title="Custom Group 2 - Name">
         <settingConfig type="alphaNumeric" />
     </setting>
-    <setting propertyKey="@Properties.customGroup2Exercises" title="Custom Group 2 Exercises (comma separated)">
+    <setting propertyKey="@Properties.customGroup2Exercises" title="Custom Group 2 - Exercises (comma separated)">
         <settingConfig type="alphaNumeric" />
     </setting>
-    <setting propertyKey="@Properties.customGroup3Name" title="Custom Group 3 Name">
+    <setting propertyKey="@Properties.customGroup3Name" title="Custom Group 3 - Name">
         <settingConfig type="alphaNumeric" />
     </setting>
-    <setting propertyKey="@Properties.customGroup3Exercises" title="Custom Group 3 Exercises (comma separated)">
+    <setting propertyKey="@Properties.customGroup3Exercises" title="Custom Group 3 - Exercises (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.moreGroups" title="More Groups (e.g. Pull Day: Rows, Pullups | Full Body: Squats, Bench)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.extraChestExercises" title="Add exercises to Chest+Triceps (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.extraBackExercises" title="Add exercises to Back+Biceps (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.extraShoulderExercises" title="Add exercises to Shoulders+Arms (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.extraLegExercises" title="Add exercises to Legs (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.extraAbsExercises" title="Add exercises to Abs (comma separated)">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.extraCardioExercises" title="Add exercises to Cardio (comma separated)">
         <settingConfig type="alphaNumeric" />
     </setting>
 </settings>

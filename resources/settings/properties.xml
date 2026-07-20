@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <properties>
+    <property id="autoRepCounting" type="boolean">true</property>
     <property id="customGroup1Name" type="string"></property>
     <property id="customGroup1Exercises" type="string"></property>
     <property id="customGroup2Name" type="string"></property>
     <property id="customGroup2Exercises" type="string"></property>
     <property id="customGroup3Name" type="string"></property>
     <property id="customGroup3Exercises" type="string"></property>
+    <property id="moreGroups" type="string"></property>
+    <property id="extraChestExercises" type="string"></property>
+    <property id="extraBackExercises" type="string"></property>
+    <property id="extraShoulderExercises" type="string"></property>
+    <property id="extraLegExercises" type="string"></property>
+    <property id="extraAbsExercises" type="string"></property>
+    <property id="extraCardioExercises" type="string"></property>
 </properties>

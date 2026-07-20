@@ -1,3 +1,4 @@
+import Toybox.Application;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
@@ -30,6 +31,7 @@ class WorkoutView extends WatchUi.View {
     private var _autoDetectEnabled as Boolean = true;
     private var _stateBeforePause as WorkoutState = STATE_SET_ACTIVE;
     private var _transitionCooldown as Number = 0;
+    private var _weight as Number = 0;
 
     function initialize(exerciseName as String, groupName as String) {
         View.initialize();
@@ -93,12 +95,13 @@ class WorkoutView extends WatchUi.View {
         dc.setColor(0x00CC66, Graphics.COLOR_TRANSPARENT);
         dc.fillRectangle(0, 0, w, 4);
 
-        // Zone 1 (top): Exercise + Set
+        // Zone 1 (top): SET + line + Exercise
         dc.setColor(0x00CC66, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 45, Graphics.FONT_SMALL, "SET " + _setNumber,
             Graphics.TEXT_JUSTIFY_CENTER);
+        drawTopHalfHex(dc, cx, 85, 160, 0x00CC66);
         dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 75, Graphics.FONT_XTINY, _exerciseName,
+        dc.drawText(cx, 90, Graphics.FONT_XTINY, _exerciseName,
             Graphics.TEXT_JUSTIFY_CENTER);
 
         // Zone 2 (upper): HR left, CAL right
@@ -107,20 +110,18 @@ class WorkoutView extends WatchUi.View {
         var hrStr = hr > 0 ? hr.toString() : "--";
         var cal = _healthMonitor.getCalories();
 
-        drawHexBorder(dc, cx - 70, 120, 80, 40, 0x333333);
         dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 108, Graphics.FONT_XTINY, hrStr,
+        dc.drawText(cx - 80, 170, Graphics.FONT_XTINY, hrStr,
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 133, Graphics.FONT_XTINY, "HR",
+        dc.drawText(cx - 80, 195, Graphics.FONT_XTINY, "HR",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        drawHexBorder(dc, cx + 70, 120, 80, 40, 0x333333);
         dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 108, Graphics.FONT_XTINY, cal.toString(),
+        dc.drawText(cx + 80, 170, Graphics.FONT_XTINY, cal.toString(),
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 133, Graphics.FONT_XTINY, "CAL",
+        dc.drawText(cx + 80, 195, Graphics.FONT_XTINY, "CAL",
             Graphics.TEXT_JUSTIFY_CENTER);
 
         // Zone 3 (center): REPS or Distance/Floors for cardio
@@ -128,17 +129,17 @@ class WorkoutView extends WatchUi.View {
         if (isCardioExercise()) {
             if (isStairExercise()) {
                 var floors = _healthMonitor.getFloors();
-                dc.drawText(cx, 155, Graphics.FONT_NUMBER_HOT, floors.toString(),
+                dc.drawText(cx, 165, Graphics.FONT_NUMBER_MEDIUM, floors.toString(),
                     Graphics.TEXT_JUSTIFY_CENTER);
                 dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, 265, Graphics.FONT_XTINY, "FLOORS",
+                dc.drawText(cx, 255, Graphics.FONT_XTINY, "FLOORS",
                     Graphics.TEXT_JUSTIFY_CENTER);
             } else {
                 var miles = _healthMonitor.getDistanceMiles();
-                dc.drawText(cx, 155, Graphics.FONT_NUMBER_HOT, miles.format("%.2f"),
+                dc.drawText(cx, 165, Graphics.FONT_NUMBER_MEDIUM, miles.format("%.2f"),
                     Graphics.TEXT_JUSTIFY_CENTER);
                 dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, 265, Graphics.FONT_XTINY, "MILES",
+                dc.drawText(cx, 255, Graphics.FONT_XTINY, "MILES",
                     Graphics.TEXT_JUSTIFY_CENTER);
             }
         } else {
@@ -149,25 +150,22 @@ class WorkoutView extends WatchUi.View {
                 Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        // Zone 4 (lower): Elapsed left, Total right
-        drawHexBorder(dc, cx - 70, 305, 90, 40, 0x333333);
+        // Zone 4 (lower): Elapsed left, Total right — no borders
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 293, Graphics.FONT_XTINY, formatTime(_elapsedSeconds),
+        dc.drawText(cx - 70, 295, Graphics.FONT_XTINY, formatTime(_elapsedSeconds),
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 313, Graphics.FONT_XTINY, "ELAPSED",
+        dc.drawText(cx - 70, 315, Graphics.FONT_XTINY, "ELAPSED",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        drawHexBorder(dc, cx + 70, 305, 90, 40, 0x333333);
         dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 293, Graphics.FONT_XTINY, formatTime(_totalWorkoutSeconds),
+        dc.drawText(cx + 70, 295, Graphics.FONT_XTINY, formatTime(_totalWorkoutSeconds),
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 313, Graphics.FONT_XTINY, "TOTAL",
+        dc.drawText(cx + 70, 315, Graphics.FONT_XTINY, "TOTAL",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Zone 5 (bottom): clock + auto indicator
-        dc.setColor(0x666666, Graphics.COLOR_TRANSPARENT);
+        // Zone 5 (bottom): clock + auto — half hex resting on bottom bezel
         var now = System.getClockTime();
         var hour = now.hour > 12 ? now.hour - 12 : now.hour;
         if (hour == 0) { hour = 12; }
@@ -175,7 +173,9 @@ class WorkoutView extends WatchUi.View {
         if (_autoDetectEnabled) {
             bottomStr += " • AUTO";
         }
-        dc.drawText(cx, 350, Graphics.FONT_XTINY, bottomStr,
+        drawBottomHalfHex(dc, cx, 350, 160, 0x00CC66);
+        dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 355, Graphics.FONT_XTINY, bottomStr,
             Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -184,12 +184,13 @@ class WorkoutView extends WatchUi.View {
         dc.setColor(0x3399FF, Graphics.COLOR_TRANSPARENT);
         dc.fillRectangle(0, 0, w, 4);
 
-        // Zone 1 (top): REST + set info
+        // Zone 1 (top): REST + line + exercise
         dc.setColor(0x3399FF, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 45, Graphics.FONT_SMALL, "REST",
             Graphics.TEXT_JUSTIFY_CENTER);
+        drawTopHalfHex(dc, cx, 85, 160, 0x3399FF);
         dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 75, Graphics.FONT_XTINY, _exerciseName + " • " + _reps + " reps",
+        dc.drawText(cx, 78, Graphics.FONT_XTINY, _exerciseName + " • " + _reps + "r",
             Graphics.TEXT_JUSTIFY_CENTER);
 
         // Zone 2 (upper): HR left, CAL right
@@ -198,20 +199,18 @@ class WorkoutView extends WatchUi.View {
         var hrStr = hr > 0 ? hr.toString() : "--";
         var cal = _healthMonitor.getCalories();
 
-        drawHexBorder(dc, cx - 70, 120, 80, 40, 0x333333);
         dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 108, Graphics.FONT_XTINY, hrStr,
+        dc.drawText(cx - 80, 170, Graphics.FONT_XTINY, hrStr,
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 133, Graphics.FONT_XTINY, "HR",
+        dc.drawText(cx - 80, 195, Graphics.FONT_XTINY, "HR",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        drawHexBorder(dc, cx + 70, 120, 80, 40, 0x333333);
         dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 108, Graphics.FONT_XTINY, cal.toString(),
+        dc.drawText(cx + 80, 170, Graphics.FONT_XTINY, cal.toString(),
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 133, Graphics.FONT_XTINY, "CAL",
+        dc.drawText(cx + 80, 195, Graphics.FONT_XTINY, "CAL",
             Graphics.TEXT_JUSTIFY_CENTER);
 
         // Zone 3 (center): REST TIMER
@@ -222,25 +221,22 @@ class WorkoutView extends WatchUi.View {
         dc.drawText(cx, 255, Graphics.FONT_XTINY, "REST",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Zone 4 (lower): Total left, Sets right
-        drawHexBorder(dc, cx - 70, 300, 90, 40, 0x333333);
+        // Zone 4 (lower): Total left, Sets right — no borders
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 288, Graphics.FONT_XTINY, formatTime(_totalWorkoutSeconds),
+        dc.drawText(cx - 70, 295, Graphics.FONT_XTINY, formatTime(_totalWorkoutSeconds),
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 70, 308, Graphics.FONT_XTINY, "TOTAL",
+        dc.drawText(cx - 70, 315, Graphics.FONT_XTINY, "TOTAL",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        drawHexBorder(dc, cx + 70, 300, 90, 40, 0x333333);
         dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 288, Graphics.FONT_XTINY, _setNumber.toString(),
+        dc.drawText(cx + 70, 295, Graphics.FONT_XTINY, _setNumber.toString(),
             Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 70, 308, Graphics.FONT_XTINY, "SETS",
+        dc.drawText(cx + 70, 315, Graphics.FONT_XTINY, "SETS",
             Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Zone 5 (bottom): clock + auto indicator
-        dc.setColor(0x666666, Graphics.COLOR_TRANSPARENT);
+        // Zone 5 (bottom): clock + auto — half hex resting on bottom bezel
         var now = System.getClockTime();
         var hour = now.hour > 12 ? now.hour - 12 : now.hour;
         if (hour == 0) { hour = 12; }
@@ -248,7 +244,9 @@ class WorkoutView extends WatchUi.View {
         if (_autoDetectEnabled) {
             bottomStr += " • AUTO";
         }
-        dc.drawText(cx, 345, Graphics.FONT_XTINY, bottomStr,
+        drawBottomHalfHex(dc, cx, 350, 160, 0x3399FF);
+        dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 355, Graphics.FONT_XTINY, bottomStr,
             Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -279,17 +277,26 @@ class WorkoutView extends WatchUi.View {
                _exerciseName.equals("Cycling");
     }
 
-    private function drawHexBorder(dc as Dc, cx as Number, cy as Number, w as Number, h as Number, color as Number) as Void {
+    // Half-hex that rests on the top bezel edge — like Garmin's native data screens
+    private function drawTopHalfHex(dc as Dc, cx as Number, bottomY as Number, w as Number, color as Number) as Void {
         var hw = w / 2;
-        var hh = h / 2;
         var indent = hw / 3;
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(cx - hw + indent, cy - hh, cx + hw - indent, cy - hh);
-        dc.drawLine(cx + hw - indent, cy - hh, cx + hw, cy);
-        dc.drawLine(cx + hw, cy, cx + hw - indent, cy + hh);
-        dc.drawLine(cx + hw - indent, cy + hh, cx - hw + indent, cy + hh);
-        dc.drawLine(cx - hw + indent, cy + hh, cx - hw, cy);
-        dc.drawLine(cx - hw, cy, cx - hw + indent, cy - hh);
+        // Bottom edge (flat) + angled sides going up to bezel
+        dc.drawLine(cx - hw + indent, bottomY, cx + hw - indent, bottomY);
+        dc.drawLine(cx + hw - indent, bottomY, cx + hw, bottomY - 20);
+        dc.drawLine(cx - hw + indent, bottomY, cx - hw, bottomY - 20);
+    }
+
+    // Half-hex that rests on the bottom bezel edge
+    private function drawBottomHalfHex(dc as Dc, cx as Number, topY as Number, w as Number, color as Number) as Void {
+        var hw = w / 2;
+        var indent = hw / 3;
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        // Top edge (flat) + angled sides going down to bezel
+        dc.drawLine(cx - hw + indent, topY, cx + hw - indent, topY);
+        dc.drawLine(cx + hw - indent, topY, cx + hw, topY + 20);
+        dc.drawLine(cx - hw + indent, topY, cx - hw, topY + 20);
     }
 
     private function getTotalReps() as Number {
@@ -302,34 +309,33 @@ class WorkoutView extends WatchUi.View {
     }
 
     function startWorkout() as Void {
-        System.println("WV: startWorkout");
         _totalWorkoutSeconds = 0;
         _setNumber = 0;
         _setHistory = [];
-        System.println("WV: healthMonitor.start");
-        try { _healthMonitor.start(); } catch (e) { System.println("WV: healthMonitor err"); }
-        System.println("WV: recorder.start");
+        try { _healthMonitor.start(); } catch (e) {}
         try {
             if (isCardioExercise()) {
                 _recorder.startCardio(_exerciseName);
             } else {
                 _recorder.startStrength(_groupName);
             }
-        } catch (e) { System.println("WV: recorder err"); }
-        System.println("WV: startSet");
+        } catch (e) {}
         startSet();
-        System.println("WV: startTimer");
         startTimer();
-        if (_autoDetectEnabled && !isCardioExercise()) {
-            System.println("WV: repDetector.start");
+        var autoRepEnabled = true;
+        try {
+            var val = Application.Properties.getValue("autoRepCounting");
+            if (val != null && val instanceof Boolean) {
+                autoRepEnabled = val as Boolean;
+            }
+        } catch (e) {}
+        if (_autoDetectEnabled && autoRepEnabled && !isCardioExercise()) {
             try {
                 _repDetector.start();
                 _repDetector.loadThresholdsForExercise(_exerciseName);
-            } catch (e) { System.println("WV: repDetector err"); }
+            } catch (e) {}
         }
-        System.println("WV: vibeStart");
         vibeStart();
-        System.println("WV: startWorkout done");
     }
 
     function startSet() as Void {
@@ -405,7 +411,13 @@ class WorkoutView extends WatchUi.View {
 
         var menu = new WatchUi.Menu2({:title => "Workout Paused"});
         menu.addItem(new WatchUi.MenuItem("Resume", formatTime(_totalWorkoutSeconds) + " elapsed", :resume, null));
-        menu.addItem(new WatchUi.MenuItem("Save & Switch", "Save workout, pick new exercise", :switchExercise, null));
+        var weightLabel = _weight > 0 ? _weight + " lbs" : "Not set";
+        menu.addItem(new WatchUi.MenuItem("Weight", weightLabel, :weight, null));
+        if (isCardioExercise()) {
+            menu.addItem(new WatchUi.MenuItem("Save & Switch", "Save cardio, pick new", :switchExercise, null));
+        } else {
+            menu.addItem(new WatchUi.MenuItem("Switch Exercise", _exerciseName, :quickSwitch, null));
+        }
         var autoLabel = _autoDetectEnabled ? "Auto-Detect: ON" : "Auto-Detect: OFF";
         menu.addItem(new WatchUi.MenuItem(autoLabel, "Toggle auto set/rest & reps", :toggleAuto, null));
         menu.addItem(new WatchUi.MenuItem("Save", _setNumber + " sets • " + getTotalReps() + " reps", :save, null));
@@ -443,7 +455,55 @@ class WorkoutView extends WatchUi.View {
 
     private var _pendingSessionSwitch as Boolean = false;
     private var _isSaving as Boolean = false;
+    private var _quickSwitchMode as Boolean = false;
 
+
+    function setQuickSwitchMode(on as Boolean) as Void {
+        _quickSwitchMode = on;
+    }
+
+    function isQuickSwitchMode() as Boolean {
+        return _quickSwitchMode;
+    }
+
+    function doQuickSwitch(newName as String, newGroup as String) as Void {
+        _quickSwitchMode = false;
+
+        // Save current set if there are reps
+        if (_reps > 0) {
+            _setHistory.add({
+                "set" => _setNumber,
+                "reps" => _reps,
+                "duration" => _elapsedSeconds,
+                "exercise" => _exerciseName
+            });
+            try { _recorder.recordSet(_reps, _exerciseName); } catch (e) {}
+        }
+
+        // Switch to new exercise
+        _exerciseName = newName;
+        _groupName = newGroup;
+        _setNumber++;
+        _reps = 0;
+        _elapsedSeconds = 0;
+
+        try {
+            _repDetector.resetLearning();
+            _repDetector.loadThresholdsForExercise(newName);
+        } catch (e) {}
+        try {
+            ExerciseHistory.recordUsage(newName);
+            ExerciseHistory.recordGroup(newGroup);
+        } catch (e) {}
+    }
+
+    function setWeight(w as Number) as Void {
+        _weight = w;
+    }
+
+    function getWeight() as Number {
+        return _weight;
+    }
 
     function getExerciseName() as String {
         return _exerciseName;

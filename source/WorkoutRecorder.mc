@@ -14,23 +14,18 @@ class WorkoutRecorder {
     }
 
     function startStrength(name as String) as Void {
-        System.println("REC: startStrength " + name);
         if (!(Toybox has :ActivityRecording)) {
-            System.println("REC: no ActivityRecording");
             return;
         }
 
-        System.println("REC: createSession...");
         _session = ActivityRecording.createSession({
             :name => name,
             :sport => Activity.SPORT_TRAINING,
             :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
         });
-        System.println("REC: session=" + (_session != null ? "OK" : "NULL"));
 
         if (_session != null) {
             if (_session.isRecording()) {
-                System.println("REC: orphan found, discarding");
                 _session.stop();
                 _session.discard();
                 _session = null;
@@ -40,15 +35,12 @@ class WorkoutRecorder {
                     :sport => Activity.SPORT_TRAINING,
                     :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
                 });
-                System.println("REC: re-created session=" + (_session != null ? "OK" : "NULL"));
             }
 
             if (_session != null) {
-                System.println("REC: calling start()");
                 _session.start();
                 _isRecording = true;
                 _isCardio = false;
-                System.println("REC: recording started");
             }
         }
     }

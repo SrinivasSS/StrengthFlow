@@ -34,7 +34,7 @@ class ExercisePickerView extends WatchUi.View {
             var group = customGroups[i];
             var name = group["name"] as String;
             var exercises = group["exercises"] as Array<String>;
-            menu.addItem(new WatchUi.MenuItem(name, exercises.size() + " exercises", name, null));
+            menu.addItem(new WatchUi.MenuItem(name, exercises.size() + " exercises", "custom:" + name, null));
         }
 
         menu.addItem(new WatchUi.MenuItem("Cardio", "10 exercises", :cardio, null));
@@ -93,7 +93,14 @@ class GroupMenuDelegate extends WatchUi.Menu2InputDelegate {
 
         // String ID = recent group or custom group
         if (id instanceof String) {
-            var groupName = id as String;
+            var idStr = id as String;
+            var groupName = idStr;
+
+            // Custom groups have "custom:" prefix
+            if (idStr.length() > 7 && idStr.substring(0, 7).equals("custom:")) {
+                groupName = idStr.substring(7, idStr.length());
+            }
+
             var exercises = getExercisesForGroupName(groupName);
             if (exercises.size() == 0) {
                 exercises = CustomGroups.getExercisesForGroup(groupName);
@@ -127,70 +134,70 @@ class GroupMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     private function getExercisesForGroupName(name as String) as Array<String> {
         if (name.equals("Chest + Triceps")) {
-            return ["Bench Press", "Incline Press", "Chest Fly", "Tricep Dip", "Tricep Extension", "Skull Crusher"];
+            return getExercisesForGroup(:chest);
         } else if (name.equals("Back + Biceps")) {
-            return ["Deadlift", "Barbell Row", "Pull Up", "Lat Pulldown", "Seated Row", "Dumbbell Curl", "Hammer Curl"];
+            return getExercisesForGroup(:back);
         } else if (name.equals("Shoulders + Arms")) {
-            return ["Overhead Press", "Lateral Raise", "Front Raise", "Face Pull", "Wrist Curl", "Reverse Curl"];
+            return getExercisesForGroup(:shoulders);
         } else if (name.equals("Legs")) {
-            return ["Squat", "Leg Press", "Lunges", "Leg Curl", "Leg Extension", "Calf Raise", "Romanian Deadlift"];
+            return getExercisesForGroup(:legs);
         } else if (name.equals("Cardio")) {
-            return ["Treadmill Run", "Elliptical", "Stairmaster", "HIIT", "Jump Rope", "Burpees", "Mountain Climbers", "Jumping Jacks", "Box Jumps", "Battle Ropes", "Kettlebell Swing"];
+            return getExercisesForGroup(:cardio);
         } else if (name.equals("Abs")) {
-            return ["Crunch", "Plank", "Hanging Leg Raise", "Cable Crunch", "Ab Rollout", "Russian Twist"];
+            return getExercisesForGroup(:abs);
         } else if (name.equals("Chest")) {
-            return ["Bench Press", "Incline Press", "Chest Fly", "Cable Crossover"];
+            return getExercisesForGroup(:chestOnly);
         } else if (name.equals("Back")) {
-            return ["Deadlift", "Barbell Row", "Pull Up", "Lat Pulldown"];
+            return getExercisesForGroup(:backOnly);
         } else if (name.equals("Shoulders")) {
-            return ["Overhead Press", "Lateral Raise", "Front Raise", "Face Pull"];
+            return getExercisesForGroup(:shouldersOnly);
         } else if (name.equals("Triceps")) {
-            return ["Tricep Dip", "Tricep Extension", "Skull Crusher"];
+            return getExercisesForGroup(:triceps);
         } else if (name.equals("Biceps")) {
-            return ["Dumbbell Curl", "Hammer Curl", "Barbell Curl"];
+            return getExercisesForGroup(:biceps);
         } else if (name.equals("Forearms")) {
-            return ["Wrist Curl", "Reverse Curl", "Farmer Walk"];
+            return getExercisesForGroup(:forearms);
         } else if (name.equals("Quads")) {
-            return ["Squat", "Leg Press", "Leg Extension", "Lunges"];
+            return getExercisesForGroup(:quads);
         } else if (name.equals("Hamstrings")) {
-            return ["Romanian Deadlift", "Leg Curl", "Good Morning"];
+            return getExercisesForGroup(:hamstrings);
         } else if (name.equals("Glutes")) {
-            return ["Hip Thrust", "Bulgarian Split Squat", "Glute Bridge"];
+            return getExercisesForGroup(:glutes);
         } else if (name.equals("Calves")) {
-            return ["Calf Raise", "Seated Calf Raise"];
+            return getExercisesForGroup(:calves);
         }
         return [];
     }
 
     private function getExercisesForGroup(id as Symbol) as Array<String> {
         if (id == :chest) {
-            return ["Bench Press", "Incline Press", "Decline Press", "Chest Fly", "Cable Crossover", "Push Up", "Dip", "Tricep Dip", "Tricep Extension", "Skull Crusher", "Tricep Pushdown", "Close Grip Bench"];
+            return ["Bench Press", "Incline Dumbbell Press", "Incline Machine Press", "Decline Dumbbell Press", "Decline Machine Press", "Push Up", "Dip", "Machine Chest Fly", "Cable Chest Fly", "Dumbbell Chest Fly", "Tricep Pulldown", "Seated Overhead Extension", "Cable Skull Crusher", "Decline Tricep Extension"];
         } else if (id == :back) {
-            return ["Deadlift", "Barbell Row", "Pull Up", "Chin Up", "Lat Pulldown", "Seated Row", "T-Bar Row", "Face Pull", "Dumbbell Curl", "Hammer Curl", "Barbell Curl", "Preacher Curl"];
+            return ["Pull Up", "Floor Assisted Pullup", "Dumbbell Pullover", "Wide Grip Pulldown", "Neutral Grip Pulldown", "Dumbbell Row", "Machine Row", "Deadlift", "Lower Back Machine", "Dumbbell Hammer Curl", "Cable Hammer Curl", "Barbell Curl", "Overhand Barbell Curl", "Cable Curl", "Incline Cable Curl", "Machine Isolated Curl", "Isolated Dumbbell Curl"];
         } else if (id == :shoulders) {
-            return ["Overhead Press", "Dumbbell Press", "Lateral Raise", "Front Raise", "Rear Delt Fly", "Face Pull", "Upright Row", "Shrug", "Wrist Curl", "Reverse Curl", "Farmer Walk"];
+            return ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise", "Internal Rotation", "External Rotation", "Underhand Dumbbell Curl", "Overhand Dumbbell Curl"];
         } else if (id == :legs) {
-            return ["Squat", "Front Squat", "Leg Press", "Lunges", "Bulgarian Split Squat", "Leg Curl", "Leg Extension", "Romanian Deadlift", "Hip Thrust", "Calf Raise", "Goblet Squat", "Step Up"];
+            return ["Barbell Squat", "Machine Squat", "Lunges", "Leg Extension", "Hamstring Curl", "Leg Adduction", "Calf Raise", "Bulgarian Split Squat", "Hip Thrust", "Goblet Squat", "Step Up", "Romanian Deadlift"];
         } else if (id == :cardio) {
-            return ["Treadmill Run", "Elliptical", "Stairmaster", "HIIT", "Jump Rope", "Rowing Machine", "Cycling", "Burpees", "Mountain Climbers", "Jumping Jacks", "Box Jumps", "Battle Ropes", "Kettlebell Swing"];
+            return ["Treadmill Run", "Treadmill Walk", "Elliptical", "Stairmaster", "Cycling", "Outdoor Walk", "HIIT", "Jump Rope", "Rowing Machine", "Burpees", "Mountain Climbers", "Jumping Jacks", "Box Jumps", "Battle Ropes", "Kettlebell Swing"];
         } else if (id == :abs) {
-            return ["Crunch", "Plank", "Hanging Leg Raise", "Cable Crunch", "Ab Rollout", "Russian Twist", "Bicycle Crunch", "Dead Bug", "V-Up", "Woodchop"];
+            return ["Hanging Leg Raise", "Hanging Cross Leg Raise", "Plank", "Mountain Climbers", "Crunch", "Weighted Cable Rotation", "Bicycle Crunch", "Dead Bug", "V-Up", "Ab Rollout", "Russian Twist"];
         } else if (id == :chestOnly) {
-            return ["Bench Press", "Incline Press", "Decline Press", "Chest Fly", "Cable Crossover", "Push Up", "Dip", "Pec Deck"];
+            return ["Bench Press", "Incline Dumbbell Press", "Incline Machine Press", "Decline Dumbbell Press", "Decline Machine Press", "Push Up", "Dip", "Machine Chest Fly", "Cable Chest Fly", "Dumbbell Chest Fly"];
         } else if (id == :backOnly) {
-            return ["Deadlift", "Barbell Row", "Pull Up", "Chin Up", "Lat Pulldown", "Seated Row", "T-Bar Row", "Single Arm Row"];
+            return ["Pull Up", "Floor Assisted Pullup", "Dumbbell Pullover", "Wide Grip Pulldown", "Neutral Grip Pulldown", "Dumbbell Row", "Machine Row", "Deadlift", "Lower Back Machine"];
         } else if (id == :triceps) {
-            return ["Tricep Dip", "Tricep Extension", "Skull Crusher", "Tricep Pushdown", "Close Grip Bench", "Overhead Extension"];
+            return ["Tricep Pulldown", "Seated Overhead Extension", "Cable Skull Crusher", "Decline Tricep Extension", "Tricep Dip", "Close Grip Bench"];
         } else if (id == :biceps) {
-            return ["Dumbbell Curl", "Hammer Curl", "Barbell Curl", "Preacher Curl", "Concentration Curl", "Cable Curl"];
+            return ["Dumbbell Hammer Curl", "Cable Hammer Curl", "Barbell Curl", "Overhand Barbell Curl", "Cable Curl", "Incline Cable Curl", "Machine Isolated Curl", "Isolated Dumbbell Curl"];
         } else if (id == :shouldersOnly) {
-            return ["Overhead Press", "Dumbbell Press", "Lateral Raise", "Front Raise", "Rear Delt Fly", "Face Pull", "Upright Row", "Shrug"];
+            return ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise", "Internal Rotation", "External Rotation"];
         } else if (id == :forearms) {
-            return ["Wrist Curl", "Reverse Curl", "Farmer Walk", "Plate Pinch", "Dead Hang"];
+            return ["Underhand Dumbbell Curl", "Overhand Dumbbell Curl", "Wrist Curl", "Reverse Curl", "Farmer Walk"];
         } else if (id == :quads) {
-            return ["Squat", "Front Squat", "Leg Press", "Leg Extension", "Lunges", "Goblet Squat", "Step Up"];
+            return ["Barbell Squat", "Machine Squat", "Leg Extension", "Lunges", "Goblet Squat", "Step Up"];
         } else if (id == :hamstrings) {
-            return ["Romanian Deadlift", "Leg Curl", "Good Morning", "Nordic Curl", "Stiff Leg Deadlift"];
+            return ["Romanian Deadlift", "Hamstring Curl", "Good Morning", "Nordic Curl", "Stiff Leg Deadlift"];
         } else if (id == :glutes) {
             return ["Hip Thrust", "Bulgarian Split Squat", "Glute Bridge", "Cable Kickback", "Sumo Deadlift"];
         } else if (id == :calves) {
@@ -322,22 +329,50 @@ class CustomGroups {
     static function getGroups() as Array<Dictionary> {
         var groups = [] as Array<Dictionary>;
 
+        // 3 named custom groups
         for (var i = 1; i <= 3; i++) {
-            var nameKey = "customGroup" + i + "Name";
-            var exKey = "customGroup" + i + "Exercises";
-            var name = Application.Properties.getValue(nameKey);
-            var exStr = Application.Properties.getValue(exKey);
+            try {
+                var nameKey = "customGroup" + i + "Name";
+                var exKey = "customGroup" + i + "Exercises";
+                var name = Application.Properties.getValue(nameKey);
+                var exStr = Application.Properties.getValue(exKey);
 
-            if (name != null && name instanceof String && !(name as String).equals("")) {
-                var exercises = parseCommaSeparated(exStr);
-                if (exercises.size() > 0) {
-                    groups.add({
-                        "name" => name as String,
-                        "exercises" => exercises
-                    });
+                if (name != null && name instanceof String && !(name as String).equals("")) {
+                    var exercises = parseCommaSeparated(exStr);
+                    if (exercises.size() > 0) {
+                        groups.add({
+                            "name" => name as String,
+                            "exercises" => exercises
+                        });
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Additional groups from "moreGroups" field
+        // Format: "GroupName: ex1, ex2 | GroupName: ex1, ex2"
+        try {
+            var moreStr = Application.Properties.getValue("moreGroups");
+            if (moreStr != null && moreStr instanceof String && !(moreStr as String).equals("")) {
+                var parts = parsePipeSeparated(moreStr as String);
+                for (var i = 0; i < parts.size(); i++) {
+                    var part = parts[i];
+                    var colonIdx = findChar(part, ":");
+                    if (colonIdx > 0) {
+                        var gName = trim(part.substring(0, colonIdx));
+                        var gExStr = part.substring(colonIdx + 1, part.length());
+                        var gExercises = parseCommaSeparated(gExStr);
+                        if (!gName.equals("") && gExercises.size() > 0) {
+                            groups.add({
+                                "name" => gName,
+                                "exercises" => gExercises
+                            });
+                        }
+                    }
                 }
             }
-        }
+        } catch (e) {}
+
         return groups;
     }
 
@@ -349,6 +384,51 @@ class CustomGroups {
             }
         }
         return [];
+    }
+
+    // Get extra exercises to append to a built-in group
+    static function getExtraExercises(groupName as String) as Array<String> {
+        try {
+            var key = "";
+            if (groupName.equals("Chest + Triceps")) { key = "extraChestExercises"; }
+            else if (groupName.equals("Back + Biceps")) { key = "extraBackExercises"; }
+            else if (groupName.equals("Shoulders + Arms")) { key = "extraShoulderExercises"; }
+            else if (groupName.equals("Legs")) { key = "extraLegExercises"; }
+            else if (groupName.equals("Abs")) { key = "extraAbsExercises"; }
+            else if (groupName.equals("Cardio")) { key = "extraCardioExercises"; }
+
+            if (!key.equals("")) {
+                var val = Application.Properties.getValue(key);
+                if (val != null && val instanceof String) {
+                    return parseCommaSeparated(val);
+                }
+            }
+        } catch (e) {}
+        return [];
+    }
+
+    private static function parsePipeSeparated(str as String) as Array<String> {
+        var result = [] as Array<String>;
+        var start = 0;
+        for (var i = 0; i < str.length(); i++) {
+            if (str.substring(i, i + 1).equals("|")) {
+                var item = trim(str.substring(start, i));
+                if (!item.equals("")) { result.add(item); }
+                start = i + 1;
+            }
+        }
+        var last = trim(str.substring(start, str.length()));
+        if (!last.equals("")) { result.add(last); }
+        return result;
+    }
+
+    private static function findChar(str as String, ch as String) as Number {
+        for (var i = 0; i < str.length(); i++) {
+            if (str.substring(i, i + 1).equals(ch)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static function parseCommaSeparated(value) as Array<String> {
@@ -394,7 +474,41 @@ class CustomGroups {
     }
 }
 
+var activeWorkoutView as WorkoutView?;
+
+function getExercisesForGroup(groupName as String) as Array<String> {
+    var exercises = [] as Array<String>;
+    if (groupName.equals("Chest + Triceps")) {
+        exercises = ["Bench Press", "Incline Dumbbell Press", "Incline Machine Press", "Decline Dumbbell Press", "Machine Chest Fly", "Cable Chest Fly", "Dumbbell Chest Fly", "Tricep Pulldown", "Seated Overhead Extension", "Cable Skull Crusher"];
+    } else if (groupName.equals("Back + Biceps")) {
+        exercises = ["Pull Up", "Dumbbell Pullover", "Wide Grip Pulldown", "Neutral Grip Pulldown", "Dumbbell Row", "Machine Row", "Deadlift", "Dumbbell Hammer Curl", "Barbell Curl", "Cable Curl"];
+    } else if (groupName.equals("Shoulders + Arms")) {
+        exercises = ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise"];
+    } else if (groupName.equals("Legs")) {
+        exercises = ["Barbell Squat", "Machine Squat", "Lunges", "Leg Extension", "Hamstring Curl", "Leg Adduction", "Calf Raise", "Hip Thrust"];
+    } else if (groupName.equals("Abs")) {
+        exercises = ["Hanging Leg Raise", "Hanging Cross Leg Raise", "Plank", "Mountain Climbers", "Crunch", "Weighted Cable Rotation"];
+    } else if (groupName.equals("Cardio")) {
+        exercises = ["Treadmill Run", "Treadmill Walk", "Elliptical", "Stairmaster", "Cycling", "HIIT", "Jump Rope"];
+    } else {
+        return CustomGroups.getExercisesForGroup(groupName);
+    }
+
+    // Append user's extra exercises from settings
+    var extras = CustomGroups.getExtraExercises(groupName);
+    for (var i = 0; i < extras.size(); i++) {
+        exercises.add(extras[i]);
+    }
+    return exercises;
+}
+
 function launchWorkout(exerciseName as String, groupName as String) as Void {
-    var view = new WorkoutView(exerciseName, groupName);
-    WatchUi.pushView(view, new WorkoutDelegate(view), WatchUi.SLIDE_LEFT);
+    if (activeWorkoutView != null && activeWorkoutView.isQuickSwitchMode()) {
+        activeWorkoutView.doQuickSwitch(exerciseName, groupName);
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+    } else {
+        var view = new WorkoutView(exerciseName, groupName);
+        activeWorkoutView = view;
+        WatchUi.pushView(view, new WorkoutDelegate(view), WatchUi.SLIDE_LEFT);
+    }
 }
