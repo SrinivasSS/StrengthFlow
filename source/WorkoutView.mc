@@ -456,7 +456,7 @@ class WorkoutView extends WatchUi.View {
             _newPRText = _exerciseName + " " + _weight;
         }
         try {
-            _recorder.recordSet(_reps, _exerciseName);
+            _recorder.recordSet(_reps, _exerciseName, _weight);
         } catch (e) {}
         _restSeconds = 0;
         _restAlertFired = false;
@@ -483,8 +483,9 @@ class WorkoutView extends WatchUi.View {
             _totalVolume += _weight * _reps;
             LastSession.record(_exerciseName, _weight, _reps);
             if (_weight > 0) { PRTracker.checkAndRecord(_exerciseName, _weight); }
-            try { _recorder.recordSet(_reps, _exerciseName); } catch (e) {}
+            try { _recorder.recordSet(_reps, _exerciseName, _weight); } catch (e) {}
         }
+        try { _recorder.setTotalVolume(_totalVolume); } catch (e) {}
         stopTimer();
         try { _repDetector.stop(); } catch (e) {}
         try { _healthMonitor.stop(); } catch (e) {}
@@ -579,7 +580,7 @@ class WorkoutView extends WatchUi.View {
                 "duration" => _elapsedSeconds,
                 "exercise" => _exerciseName
             });
-            try { _recorder.recordSet(_reps, _exerciseName); } catch (e) {}
+            try { _recorder.recordSet(_reps, _exerciseName, _weight); } catch (e) {}
         }
 
         // Switch to new exercise
