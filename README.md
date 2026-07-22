@@ -23,6 +23,12 @@ A full-featured strength and cardio workout tracker for Garmin watches. Tracks r
 - **Stats screen** -- press DOWN mid-workout for LAST TIME / PERSONAL BEST / VOLUME TODAY
 - **Per-set weight** -- log weight via the pause menu; supports kg or lb (toggle in settings)
 
+### On-Watch History
+- **Workout history** -- the last 30 strength workouts are saved on the watch (date, exercises, sets, reps, weight, volume) and browsable from the main menu -- no phone required
+- **Full per-set breakdown** -- open any past workout to see every set with its exercise name, reps, and weight
+- **Edit past workouts** -- change a set's exercise, reps, or weight (recomputes volume), delete individual sets, delete a whole workout, or clear all history
+- **Storage guardrails** -- a ring buffer keeps the most recent workouts; under storage pressure the oldest are dropped first so the current workout is always preserved whole
+
 ### Health Metrics
 - **Real-time heart rate** with zone-based color coding (5 zones from Garmin user profile)
 - **Calories** from native Activity API

@@ -486,6 +486,13 @@ class WorkoutView extends WatchUi.View {
             try { _recorder.recordSet(_reps, _exerciseName, _weight); } catch (e) {}
         }
         try { _recorder.setTotalVolume(_totalVolume); } catch (e) {}
+        // Persist to on-watch history (strength workouts with logged sets).
+        if (!isCardioExercise()) {
+            try {
+                WorkoutHistory.save(_setHistory, _totalWorkoutSeconds, _totalVolume,
+                    _healthMonitor.getAvgHR(), _healthMonitor.getCalories());
+            } catch (e) {}
+        }
         stopTimer();
         try { _repDetector.stop(); } catch (e) {}
         try { _healthMonitor.stop(); } catch (e) {}

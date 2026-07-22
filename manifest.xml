@@ -2,7 +2,7 @@
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="5">
     <iq:application entry="StrengthTrackerApp" id="a3421fee-d289-4f85-a13e-3a5e46a3a3c2"
         launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0"
-        name="@Strings.AppName" type="watch-app" version="2.2.3">
+        name="@Strings.AppName" type="watch-app" version="2.3.0">
         <iq:products>
             <!-- Epix -->
             <iq:product id="epix2"/>

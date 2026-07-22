@@ -45,6 +45,7 @@ class ExercisePickerView extends WatchUi.View {
         menu.addItem(new WatchUi.MenuItem("Abs", "6 exercises", :abs, null));
         menu.addItem(new WatchUi.MenuItem("Isolations", "Target one muscle", :bodyparts, null));
         menu.addItem(new WatchUi.MenuItem("Free Workout", "No exercise set", :free, null));
+        menu.addItem(new WatchUi.MenuItem("History", WorkoutHistory.count() + " workouts", :history, null));
         WatchUi.pushView(menu, new GroupMenuDelegate(), WatchUi.SLIDE_UP);
     }
 }
@@ -72,6 +73,11 @@ class GroupMenuDelegate extends WatchUi.Menu2InputDelegate {
 
         if (id == :free) {
             launchWorkout("Free Workout", "Free Workout");
+            return;
+        }
+
+        if (id == :history) {
+            HistoryMenu.show();
             return;
         }
 

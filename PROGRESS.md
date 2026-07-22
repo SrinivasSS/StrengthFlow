@@ -2,7 +2,23 @@
 
 ## What Has Been Built
 
-### v2.2.2 (Current)
+### v2.3.0 (Current)
+Adds on-watch workout history:
+- **`WorkoutHistory`** (`source/WorkoutHistory.mc`) -- persists finished strength workouts to `Application.Storage`. Layout avoids the ~8KB-per-value cap: `wh_index` holds an array of ids, each `wh_<id>` holds one workout. Ring buffer keeps `MAX_WORKOUTS=30`.
+- **Storage guardrails** -- eviction-first policy: the current workout is always saved whole; older workouts are dropped to free space (count cap + evict-on-write-failure retry loop). A last-resort `MAX_SETS=120` clamp only trips for a pathological single workout; exercise names trimmed to 24 chars.
+- **History UI** (`source/HistoryView.mc`) -- `HistoryMenu` (list, newest first) -> `WorkoutDetailView` (scrollable per-set breakdown) -> edit menu -> per-set menu (edit Exercise/Reps/Weight via pickers, or Delete Set) plus Delete Whole Workout and Clear All (with confirmation).
+- **Menu entry** -- "History" added to the main group menu; saved in `endWorkout` for non-cardio workouts.
+- Multi-level menu nav uses sequential `popView` (proven safe pattern, same as QuickSwitch); value pickers pop 3x back to the detail view which reloads from storage.
+
+#### KEY FINDING: exercise names in Garmin Connect are impossible from a watch app
+Extensively researched (6 agents, Garmin official docs + FIT SDK source + forums). Confirmed conclusively:
+- Garmin's native strength "Sets" view is driven by the FIT `set` message (global msg **225**), which holds exercise category/name, reps, weight. It is writable ONLY by the full FIT SDK (C/Java/Python/etc.) off-watch -- NEVER by Connect IQ.
+- Connect IQ `ActivityRecording.Session` has 8 methods, none write sets. `FitContributor` is limited to SESSION(18)/LAP(19)/RECORD(20). No `addSet()` exists; Garmin has declined the request for ~9 years and closed the cloud set-write API to third parties in 2025.
+- We DO write `exercise`/`reps`/`weight` as FitContributor LAP developer fields (confirmed present via decoding an exported FIT). But Garmin Connect does NOT render lap developer fields for strength activities (Sets view has no lap table). **Tested Option B** (record as generic/running to force a laps table): even from a store install with a guaranteed splits table, the columns did NOT show on the phone. Option B is dead.
+- The ONLY way to get native exercise names into Connect is Rack's method: a companion phone app builds a full FIT with `set` messages and pushes it over the CIQ BLE channel. That's a separate multi-platform project, deferred.
+- **Conclusion:** on-watch history (this release) is the reliable, in-our-control answer for reviewing exercise names. FIT export also contains them for external tools.
+
+### v2.2.2
 Everything in v2.0.0 plus the "progress tracking" release:
 - **Total volume tracking** -- weight x reps accumulated across the whole session, shown in the summary and on the stats screen (`WorkoutView._totalVolume`)
 - **Personal Record (PR) tracking** -- best weight per exercise saved long-term in `Application.Storage` (`PRTracker`, key `"prs"`); a PR triggers a distinct vibration and is displayed on the rest screen
