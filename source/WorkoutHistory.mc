@@ -31,8 +31,62 @@ class WorkoutHistory {
     //     do we clip it. Normal 15-30 set workouts are never touched.
     //     Exercise names are trimmed (cheap, always safe).
     static function save(sets as Array, totalSeconds as Number, volume as Number,
-                         avgHR as Number, calories as Number) as Void {
+                         avgHR as Number, calories as Number, group as String) as Void {
         if (sets == null || sets.size() == 0) { return; }
+
+        // Compact the per-set data. We keep ALL sets of the current workout;
+        // MAX_SETS is only a last-resort clamp for a pathological session
+        // that alone would exceed the per-value storage limit.
+        var storedSets = [] as Array<Dictionary>;
+        var limit = sets.size() < MAX_SETS ? sets.size() : MAX_SETS;
+        for (var i = 0; i < limit; i++) {
+            var s = sets[i] as Dictionary;
+            var name = s.hasKey("exercise") ? s["exercise"] as String : "";
+            if (name.length() > MAX_NAME_LEN) {
+                name = name.substring(0, MAX_NAME_LEN);
+            }
+            storedSets.add({
+                "e" => name,
+                "r" => s.hasKey("reps") ? s["reps"] : 0,
+                "w" => s.hasKey("weight") ? s["weight"] : 0,
+                "d" => s.hasKey("duration") ? s["duration"] : 0
+            });
+        }
+
+        writeWorkout({
+            "date" => nowStamp(),
+            "secs" => totalSeconds,
+            "vol" => volume,
+            "hr" => avgHR,
+            "cal" => calories,
+            "group" => group,
+            "cardio" => false,
+            "sets" => storedSets
+        });
+    }
+
+    // Save a cardio session as a summary entry (no sets). `name` is the cardio
+    // exercise (e.g. "Treadmill Run"); it doubles as the history title/group.
+    static function saveCardio(name as String, totalSeconds as Number,
+                               avgHR as Number, calories as Number,
+                               distanceTenths as Number, floors as Number) as Void {
+        writeWorkout({
+            "date" => nowStamp(),
+            "secs" => totalSeconds,
+            "vol" => 0,
+            "hr" => avgHR,
+            "cal" => calories,
+            "group" => name,
+            "cardio" => true,
+            "dist" => distanceTenths,   // tenths of a mile
+            "floors" => floors,
+            "sets" => [] as Array<Dictionary>
+        });
+    }
+
+    // Shared writer: assigns an id, enforces the count cap, writes with
+    // evict-oldest-on-failure retry, and updates the index. Never throws.
+    private static function writeWorkout(workout as Dictionary) as Void {
         try {
             var index = getIndex();
 
@@ -42,35 +96,7 @@ class WorkoutHistory {
             if (index.size() > 0) {
                 newId = (index[index.size() - 1] as Number) + 1;
             }
-
-            // Compact the per-set data. We keep ALL sets of the current workout;
-            // MAX_SETS is only a last-resort clamp for a pathological session
-            // that alone would exceed the per-value storage limit.
-            var storedSets = [] as Array<Dictionary>;
-            var limit = sets.size() < MAX_SETS ? sets.size() : MAX_SETS;
-            for (var i = 0; i < limit; i++) {
-                var s = sets[i] as Dictionary;
-                var name = s.hasKey("exercise") ? s["exercise"] as String : "";
-                if (name.length() > MAX_NAME_LEN) {
-                    name = name.substring(0, MAX_NAME_LEN);
-                }
-                storedSets.add({
-                    "e" => name,
-                    "r" => s.hasKey("reps") ? s["reps"] : 0,
-                    "w" => s.hasKey("weight") ? s["weight"] : 0,
-                    "d" => s.hasKey("duration") ? s["duration"] : 0
-                });
-            }
-
-            var workout = {
-                "id" => newId,
-                "date" => nowStamp(),
-                "secs" => totalSeconds,
-                "vol" => volume,
-                "hr" => avgHR,
-                "cal" => calories,
-                "sets" => storedSets
-            };
+            workout["id"] = newId;
 
             // Enforce the count cap up front (before writing the new one).
             while (index.size() >= MAX_WORKOUTS) {
@@ -79,15 +105,14 @@ class WorkoutHistory {
                 index = index.slice(1, null);
             }
 
-            // Write the workout, retrying by evicting the oldest if storage is
-            // full. If it still won't fit, abort without touching the index.
+            // Write, retrying by evicting the oldest if storage is full. If it
+            // still won't fit, abort without touching the index.
             var wrote = false;
             for (var attempt = 0; attempt <= SAVE_RETRIES && !wrote; attempt++) {
                 try {
                     Application.Storage.setValue("wh_" + newId, workout);
                     wrote = true;
                 } catch (ex) {
-                    // Storage pressure: drop the oldest and try again.
                     if (index.size() > 0) {
                         var evict = index[0] as Number;
                         Application.Storage.deleteValue("wh_" + evict);

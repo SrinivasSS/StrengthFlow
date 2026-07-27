@@ -97,13 +97,17 @@ class HealthMonitor {
     }
 
     private function computeZone(hr as Number) as Number {
+        // getHeartRateZones returns 6 boundaries: zones[0]=floor of zone 1,
+        // zones[1]=floor of zone 2, ... zones[4]=floor of zone 5, zones[5]=max HR.
+        // Zone N = zones[N-1] <= hr < zones[N]. (The old code compared the wrong
+        // indices, so real zone-1 HRs fell through to 0 and nothing highlighted.)
         var zones = UserProfile.getHeartRateZones(UserProfile.HR_ZONE_SPORT_GENERIC);
         if (zones != null && zones.size() >= 6) {
-            if (hr >= zones[5]) { return 5; }
-            if (hr >= zones[4]) { return 4; }
-            if (hr >= zones[3]) { return 3; }
-            if (hr >= zones[2]) { return 2; }
-            if (hr >= zones[1]) { return 1; }
+            if (hr >= zones[4]) { return 5; }
+            if (hr >= zones[3]) { return 4; }
+            if (hr >= zones[2]) { return 3; }
+            if (hr >= zones[1]) { return 2; }
+            if (hr >= zones[0]) { return 1; }
         }
         return 0;
     }

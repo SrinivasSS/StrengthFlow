@@ -181,7 +181,7 @@ class GroupMenuDelegate extends WatchUi.Menu2InputDelegate {
         } else if (id == :back) {
             return ["Pull Up", "Floor Assisted Pullup", "Dumbbell Pullover", "Wide Grip Pulldown", "Neutral Grip Pulldown", "Dumbbell Row", "Machine Row", "Deadlift", "Lower Back Machine", "Dumbbell Hammer Curl", "Cable Hammer Curl", "Barbell Curl", "Overhand Barbell Curl", "Cable Curl", "Incline Cable Curl", "Machine Isolated Curl", "Isolated Dumbbell Curl"];
         } else if (id == :shoulders) {
-            return ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise", "Internal Rotation", "External Rotation", "Underhand Dumbbell Curl", "Overhand Dumbbell Curl"];
+            return ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise", "Internal Rotation", "External Rotation", "Underhand Dumbbell Curl", "Overhand Dumbbell Curl", "Dumbbell Wrist Curl", "Reverse Dumbbell Wrist Curl"];
         } else if (id == :legs) {
             return ["Barbell Squat", "Machine Squat", "Lunges", "Leg Extension", "Hamstring Curl", "Leg Adduction", "Calf Raise", "Bulgarian Split Squat", "Hip Thrust", "Goblet Squat", "Step Up", "Romanian Deadlift"];
         } else if (id == :cardio) {
@@ -489,7 +489,7 @@ function getExercisesForGroup(groupName as String) as Array<String> {
     } else if (groupName.equals("Back + Biceps")) {
         exercises = ["Pull Up", "Dumbbell Pullover", "Wide Grip Pulldown", "Neutral Grip Pulldown", "Dumbbell Row", "Machine Row", "Deadlift", "Dumbbell Hammer Curl", "Barbell Curl", "Cable Curl"];
     } else if (groupName.equals("Shoulders + Arms")) {
-        exercises = ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise"];
+        exercises = ["Dumbbell Shoulder Press", "Machine Shoulder Press", "Cable Front Raise", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Rear Delt Reverse Fly", "Dumbbell Trap Raise", "Internal Rotation", "External Rotation", "Underhand Dumbbell Curl", "Overhand Dumbbell Curl", "Dumbbell Wrist Curl", "Reverse Dumbbell Wrist Curl"];
     } else if (groupName.equals("Legs")) {
         exercises = ["Barbell Squat", "Machine Squat", "Lunges", "Leg Extension", "Hamstring Curl", "Leg Adduction", "Calf Raise", "Hip Thrust"];
     } else if (groupName.equals("Abs")) {

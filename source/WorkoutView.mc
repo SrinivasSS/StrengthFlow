@@ -472,7 +472,9 @@ class WorkoutView extends WatchUi.View {
     }
 
     function endWorkout(restartAfter as Boolean) as Void {
-        if ((_state == STATE_SET_ACTIVE || _state == STATE_PAUSED) && _reps > 0) {
+        // Save the in-progress set on finish (every started set is recorded,
+        // even 0-rep, so nothing the user logged is dropped).
+        if (_state == STATE_SET_ACTIVE || _state == STATE_PAUSED) {
             _setHistory.add({
                 "set" => _setNumber,
                 "reps" => _reps,
@@ -486,11 +488,21 @@ class WorkoutView extends WatchUi.View {
             try { _recorder.recordSet(_reps, _exerciseName, _weight); } catch (e) {}
         }
         try { _recorder.setTotalVolume(_totalVolume); } catch (e) {}
-        // Persist to on-watch history (strength workouts with logged sets).
-        if (!isCardioExercise()) {
+        // Persist to on-watch history: strength as a set breakdown, cardio as
+        // a summary entry (duration / HR / calories / distance or floors).
+        if (isCardioExercise()) {
+            try {
+                var distTenths = _manualDistance >= 0.0
+                    ? (_manualDistance * 10.0).toNumber()
+                    : (_healthMonitor.getDistanceMiles() * 10.0).toNumber();
+                WorkoutHistory.saveCardio(_exerciseName, _totalWorkoutSeconds,
+                    _healthMonitor.getAvgHR(), _healthMonitor.getCalories(),
+                    distTenths, _healthMonitor.getFloors());
+            } catch (e) {}
+        } else {
             try {
                 WorkoutHistory.save(_setHistory, _totalWorkoutSeconds, _totalVolume,
-                    _healthMonitor.getAvgHR(), _healthMonitor.getCalories());
+                    _healthMonitor.getAvgHR(), _healthMonitor.getCalories(), _groupName);
             } catch (e) {}
         }
         stopTimer();
@@ -579,16 +591,17 @@ class WorkoutView extends WatchUi.View {
     function doQuickSwitch(newName as String, newGroup as String) as Void {
         _quickSwitchMode = false;
 
-        // Save current set if there are reps
-        if (_reps > 0) {
-            _setHistory.add({
-                "set" => _setNumber,
-                "reps" => _reps,
-                "duration" => _elapsedSeconds,
-                "exercise" => _exerciseName
-            });
-            try { _recorder.recordSet(_reps, _exerciseName, _weight); } catch (e) {}
-        }
+        // Save the current set before switching (every started set is recorded,
+        // even 0-rep). Includes weight so the breakdown/history is complete.
+        _setHistory.add({
+            "set" => _setNumber,
+            "reps" => _reps,
+            "duration" => _elapsedSeconds,
+            "exercise" => _exerciseName,
+            "weight" => _weight
+        });
+        _totalVolume += _weight * _reps;
+        try { _recorder.recordSet(_reps, _exerciseName, _weight); } catch (e) {}
 
         // Switch to new exercise
         _exerciseName = newName;

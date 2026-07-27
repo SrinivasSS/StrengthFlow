@@ -197,11 +197,19 @@ class QuickSwitchDelegate extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         if (id == :otherGroups) {
-            ExercisePickerView.showGroupMenu();
+            // Switching to a different group = a separate workout. Save the
+            // current one (so it lands in history + syncs) and restart through
+            // the proven summary/group-picker path, rather than quick-switching
+            // across groups (which lost data and left menus stacked).
+            _view.setQuickSwitchMode(false);
+            WatchUi.popView(WatchUi.SLIDE_RIGHT);  // close switch menu
+            WatchUi.popView(WatchUi.SLIDE_DOWN);   // close pause menu -> workout view
+            _view.endWorkout(true);                 // save + summary + pick new
             return;
         }
 
-        // Quick switch — change name, pop switch menu + pause menu, resume
+        // Same-group quick switch — change name (keeps one combined session),
+        // pop switch menu + pause menu, resume.
         var name = item.getLabel();
         _view.doQuickSwitch(name, _view.getGroupName());
         WatchUi.popView(WatchUi.SLIDE_RIGHT);

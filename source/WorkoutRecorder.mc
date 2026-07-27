@@ -6,9 +6,14 @@ import Toybox.FitContributor;
 
 class WorkoutRecorder {
 
-    private var _session as ActivityRecording.Session?;
-    private var _isRecording as Boolean = false;
-    private var _isCardio as Boolean = false;
+    // Session state is STATIC/shared. ActivityRecording is a device-global,
+    // single-session resource, so a new WorkoutRecorder (created when the user
+    // switches exercises) must be able to tear down a session left running by a
+    // previous view. Instance-scoped state couldn't reach it, which caused a
+    // "Cannot create a new session while recording is active" crash on switch.
+    private static var _session as ActivityRecording.Session?;
+    private static var _isRecording as Boolean = false;
+    private static var _isCardio as Boolean = false;
 
     // FitContributor developer fields. These surface in Garmin Connect (web +
     // export) as "Connect IQ" data on each lap/session. They are NOT the native
@@ -17,10 +22,10 @@ class WorkoutRecorder {
     // developer data fields instead. All creation is guarded: if a device
     // rejects a field (older watches are spotty on STRING fields especially),
     // we null it out and simply skip writing, rather than crash.
-    private var _fExercise as FitContributor.Field?;
-    private var _fReps as FitContributor.Field?;
-    private var _fWeight as FitContributor.Field?;
-    private var _fVolume as FitContributor.Field?;
+    private static var _fExercise as FitContributor.Field?;
+    private static var _fReps as FitContributor.Field?;
+    private static var _fWeight as FitContributor.Field?;
+    private static var _fVolume as FitContributor.Field?;
 
     // Field IDs must be unique per message type.
     private const FID_EXERCISE = 0;
@@ -32,36 +37,48 @@ class WorkoutRecorder {
         startStrength(name);
     }
 
+    // Force-stop and discard any active session before starting a new one.
+    // Handles both a live session (from a previous view during exercise switch)
+    // and an orphan left by a crash. Never throws.
+    private static function tearDownActiveSession() as Void {
+        try {
+            if (_session != null) {
+                try { _session.stop(); } catch (e) {}
+                try { _session.discard(); } catch (e) {}
+            }
+        } catch (e) {}
+        _session = null;
+        _isRecording = false;
+        _fExercise = null;
+        _fReps = null;
+        _fWeight = null;
+        _fVolume = null;
+    }
+
     function startStrength(name as String) as Void {
         if (!(Toybox has :ActivityRecording)) {
             return;
         }
 
-        _session = ActivityRecording.createSession({
-            :name => name,
-            :sport => Activity.SPORT_TRAINING,
-            :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
-        });
+        // Clear any session still running (e.g. switching exercises mid-workout)
+        // so createSession can't throw "recording is active".
+        tearDownActiveSession();
+
+        try {
+            _session = ActivityRecording.createSession({
+                :name => name,
+                :sport => Activity.SPORT_TRAINING,
+                :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
+            });
+        } catch (e) {
+            _session = null;
+        }
 
         if (_session != null) {
-            if (_session.isRecording()) {
-                _session.stop();
-                _session.discard();
-                _session = null;
-
-                _session = ActivityRecording.createSession({
-                    :name => name,
-                    :sport => Activity.SPORT_TRAINING,
-                    :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
-                });
-            }
-
-            if (_session != null) {
-                createFields(_session);
-                _session.start();
-                _isRecording = true;
-                _isCardio = false;
-            }
+            createFields(_session);
+            try { _session.start(); } catch (e) {}
+            _isRecording = true;
+            _isCardio = false;
         }
     }
 
@@ -82,30 +99,24 @@ class WorkoutRecorder {
             subSport = Activity.SUB_SPORT_STAIR_CLIMBING;
         }
 
-        _session = ActivityRecording.createSession({
-            :name => exerciseName,
-            :sport => sport,
-            :subSport => subSport
-        });
+        // Clear any session still running (e.g. switching from a strength
+        // exercise to cardio mid-workout) so createSession can't throw.
+        tearDownActiveSession();
+
+        try {
+            _session = ActivityRecording.createSession({
+                :name => exerciseName,
+                :sport => sport,
+                :subSport => subSport
+            });
+        } catch (e) {
+            _session = null;
+        }
 
         if (_session != null) {
-            if (_session.isRecording()) {
-                _session.stop();
-                _session.discard();
-                _session = null;
-
-                _session = ActivityRecording.createSession({
-                    :name => exerciseName,
-                    :sport => sport,
-                    :subSport => subSport
-                });
-            }
-
-            if (_session != null) {
-                _session.start();
-                _isRecording = true;
-                _isCardio = true;
-            }
+            try { _session.start(); } catch (e) {}
+            _isRecording = true;
+            _isCardio = true;
         }
     }
 

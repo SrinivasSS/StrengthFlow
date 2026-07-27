@@ -39,18 +39,45 @@ class HistoryMenu {
                 if (w == null) { continue; }
                 var date = WorkoutHistory.shortDate(w);
                 var sets = w["sets"] as Array;
-                var first = sets.size() > 0 ? (sets[0] as Dictionary)["e"] as String : "Workout";
-                var sub = sets.size() + " sets";
-                var vol = w["vol"] as Number;
-                if (vol > 0) {
-                    sub += " • " + vol + " " + WorkoutView.weightUnit();
+                var isCardio = w.hasKey("cardio") && (w["cardio"] as Boolean);
+                // Prefer the group name; fall back to the first exercise for
+                // older entries saved before the group was stored.
+                var title = "Workout";
+                if (w.hasKey("group") && !(w["group"] as String).equals("")) {
+                    title = w["group"] as String;
+                } else if (sets.size() > 0) {
+                    title = (sets[0] as Dictionary)["e"] as String;
                 }
-                menu.addItem(new WatchUi.MenuItem(date + " · " + first, sub, id, null));
+                var sub;
+                if (isCardio) {
+                    // Cardio: duration + distance (or floors) + calories.
+                    sub = HistoryMenu.formatMinSec(w["secs"] as Number);
+                    var dist = w.hasKey("dist") ? w["dist"] as Number : 0;
+                    var floors = w.hasKey("floors") ? w["floors"] as Number : 0;
+                    if (dist > 0) {
+                        sub += " • " + (dist / 10.0).format("%.1f") + " mi";
+                    } else if (floors > 0) {
+                        sub += " • " + floors + " floors";
+                    }
+                } else {
+                    sub = sets.size() + " sets";
+                    var vol = w["vol"] as Number;
+                    if (vol > 0) {
+                        sub += " • " + vol + " " + WorkoutView.weightUnit();
+                    }
+                }
+                menu.addItem(new WatchUi.MenuItem(date + " · " + title, sub, id, null));
             }
             menu.addItem(new WatchUi.MenuItem("Clear All History", WorkoutHistory.count() + " workouts", :clearAll, null));
         }
 
         WatchUi.pushView(menu, new HistoryMenuDelegate(), WatchUi.SLIDE_LEFT);
+    }
+
+    static function formatMinSec(seconds as Number) as String {
+        var m = seconds / 60;
+        var s = seconds % 60;
+        return m.format("%d") + ":" + s.format("%02d");
     }
 }
 
@@ -138,42 +165,72 @@ class WorkoutDetailView extends WatchUi.View {
 
         var y = 50 - _scroll;
 
-        // Header: date + totals
+        // Header: date + group name + totals
         dc.setColor(0x00CC66, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_SMALL, WorkoutHistory.shortDate(_workout),
-            Graphics.TEXT_JUSTIFY_CENTER);
+        var header = WorkoutHistory.shortDate(_workout);
+        if (_workout.hasKey("group") && !(_workout["group"] as String).equals("")) {
+            header += " · " + (_workout["group"] as String);
+        }
+        dc.drawText(cx, y, Graphics.FONT_SMALL, header, Graphics.TEXT_JUSTIFY_CENTER);
         y += 32;
 
         var secs = _workout["secs"] as Number;
-        var vol = _workout["vol"] as Number;
-        dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY,
-            formatTime(secs) + (vol > 0 ? "  •  " + vol + " " + WorkoutView.weightUnit() : ""),
-            Graphics.TEXT_JUSTIFY_CENTER);
-        y += 30;
+        var isCardio = _workout.hasKey("cardio") && (_workout["cardio"] as Boolean);
 
-        // Per-set rows
-        var sets = _workout["sets"] as Array;
-        for (var i = 0; i < sets.size(); i++) {
-            var s = sets[i] as Dictionary;
-            var name = s["e"] as String;
-            var reps = s["r"] as Number;
-            var wt = s["w"] as Number;
+        if (isCardio) {
+            // Cardio summary: duration, distance/floors, avg HR, calories.
+            var hr = _workout.hasKey("hr") ? _workout["hr"] as Number : 0;
+            var cal = _workout.hasKey("cal") ? _workout["cal"] as Number : 0;
+            var dist = _workout.hasKey("dist") ? _workout["dist"] as Number : 0;
+            var floors = _workout.hasKey("floors") ? _workout["floors"] as Number : 0;
 
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(20, y, Graphics.FONT_XTINY, (i + 1) + ". " + name,
-                Graphics.TEXT_JUSTIFY_LEFT);
-            var detail = wt > 0 ? reps + " × " + wt : reps + " reps";
-            dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(w - 20, y, Graphics.FONT_XTINY, detail,
-                Graphics.TEXT_JUSTIFY_RIGHT);
-            y += 26;
+            drawStatRow(dc, cx, y, "Time", formatTime(secs)); y += 30;
+            if (dist > 0) {
+                drawStatRow(dc, cx, y, "Distance", (dist / 10.0).format("%.1f") + " mi"); y += 30;
+            } else if (floors > 0) {
+                drawStatRow(dc, cx, y, "Floors", floors.toString()); y += 30;
+            }
+            if (hr > 0) { drawStatRow(dc, cx, y, "Avg HR", hr + " bpm"); y += 30; }
+            if (cal > 0) { drawStatRow(dc, cx, y, "Calories", cal.toString()); y += 30; }
+        } else {
+            var vol = _workout["vol"] as Number;
+            dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, Graphics.FONT_XTINY,
+                formatTime(secs) + (vol > 0 ? "  •  " + vol + " " + WorkoutView.weightUnit() : ""),
+                Graphics.TEXT_JUSTIFY_CENTER);
+            y += 30;
+
+            // Per-set rows
+            var sets = _workout["sets"] as Array;
+            for (var i = 0; i < sets.size(); i++) {
+                var s = sets[i] as Dictionary;
+                var name = s["e"] as String;
+                var reps = s["r"] as Number;
+                var wt = s["w"] as Number;
+
+                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(20, y, Graphics.FONT_XTINY, (i + 1) + ". " + name,
+                    Graphics.TEXT_JUSTIFY_LEFT);
+                var detail = wt > 0 ? reps + " × " + wt : reps + " reps";
+                dc.setColor(0xFFAA00, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(w - 20, y, Graphics.FONT_XTINY, detail,
+                    Graphics.TEXT_JUSTIFY_RIGHT);
+                y += 26;
+            }
         }
 
         y += 10;
         dc.setColor(0x555555, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_XTINY, "MENU: edit / delete",
             Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
+    private function drawStatRow(dc as Dc, cx as Number, y as Number,
+                                 label as String, value as String) as Void {
+        dc.setColor(0x999999, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx - 10, y, Graphics.FONT_XTINY, label, Graphics.TEXT_JUSTIFY_RIGHT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx + 10, y, Graphics.FONT_XTINY, value, Graphics.TEXT_JUSTIFY_LEFT);
     }
 
     private function formatTime(seconds as Number) as String {

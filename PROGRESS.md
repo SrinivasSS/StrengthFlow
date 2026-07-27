@@ -2,7 +2,20 @@
 
 ## What Has Been Built
 
-### v2.3.0 (Current)
+### v2.3.1 (Current)
+Bug-fix + polish pass on top of history (from user feedback, esp. Mandie R.):
+- **Fixed crash** switching strength->cardio mid-workout ("Cannot create a new session while recording is active"). `ActivityRecording` is a device-global single-session resource; `WorkoutRecorder` session state is now `static` + a `tearDownActiveSession()` helper stops/discards any live session before `createSession`, which is also wrapped in try/catch.
+- **Fixed cross-group switch** losing the first group's data + bouncing back to the group menu. "Other Groups" now routes through the save-and-restart (`endWorkout(true)`) path: the current workout saves (lands in history) and the picker opens cleanly. Same-group switching still quick-switches into one session.
+- **Fixed HR zone arc** off-by-one in `HealthMonitor.computeZone` (compared wrong `getHeartRateZones` indices, so real zone-1 HRs returned 0 and nothing highlighted -> all zones looked bright). Now `zones[N-1] <= hr < zones[N]`.
+- **Save every set** including 0-rep (removed `_reps > 0` guards on the finish/switch paths); also fixed `doQuickSwitch` not storing weight or updating volume.
+- **Cardio in history** -- cardio now saves as a summary entry (duration / distance or floors / avg HR / calories) via `WorkoutHistory.saveCardio`; list + detail render cardio without a set breakdown.
+- **History shows group name** (e.g. "Chest + Triceps") instead of the first exercise; group threaded through `WorkoutHistory.save`.
+- Added Shoulders+Arms exercises: Dumbbell Wrist Curl, Reverse Dumbbell Wrist Curl (Internal/External Rotation already existed).
+
+#### Note on physiological metrics (researched)
+Training Load, Training Effect, EPOC, recovery, Body Battery are all driven by the HR stream + duration + sport-type we already record -- so app-recorded workouts feed these the same as native strength mode. The `set` message we can't write is display/log data, not load data. VO2 max is not computed from strength activities at all (native or third-party) -- it needs GPS run/bike pace-vs-HR.
+
+### v2.3.0
 Adds on-watch workout history:
 - **`WorkoutHistory`** (`source/WorkoutHistory.mc`) -- persists finished strength workouts to `Application.Storage`. Layout avoids the ~8KB-per-value cap: `wh_index` holds an array of ids, each `wh_<id>` holds one workout. Ring buffer keeps `MAX_WORKOUTS=30`.
 - **Storage guardrails** -- eviction-first policy: the current workout is always saved whole; older workouts are dropped to free space (count cap + evict-on-write-failure retry loop). A last-resort `MAX_SETS=120` clamp only trips for a pathological single workout; exercise names trimmed to 24 chars.
